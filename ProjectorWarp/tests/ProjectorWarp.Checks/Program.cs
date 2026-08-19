@@ -415,6 +415,44 @@ if (graphics is not null)
         {
             player?.Dispose();
         }
+
+        // 17-b. 비ASCII 파일명 회귀 검사.
+        // file:// URI 로 넘기면 퍼센트 인코딩이 ANSI 로 해석되어 0x80070002 로 실패했다.
+        string awkward = Path.Combine(Path.GetTempPath(), "프로젝터워프 테스트 #1" + Path.GetExtension(clip));
+        try
+        {
+            File.Copy(clip, awkward, overwrite: true);
+            using var awkwardPlayer = new VideoPlayer(graphics);
+            string? awkwardFailure = null;
+            awkwardPlayer.Failed += message => awkwardFailure ??= message;
+            awkwardPlayer.Open(awkward, loop: false, volume: 0.0);
+
+            int awkwardFrames = 0;
+            var awkwardDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+            while (DateTime.UtcNow < awkwardDeadline && awkwardFrames == 0 && awkwardFailure is null)
+            {
+                if (awkwardPlayer.TryAcquireFrame() && awkwardPlayer.FrameTexture is not null) awkwardFrames++;
+                else Thread.Sleep(5);
+            }
+            Check(awkwardFrames > 0 && awkwardFailure is null,
+                $"video with non-ascii file name plays ({Path.GetFileName(awkward)}) {awkwardFailure}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            Check(false, "video with non-ascii file name plays");
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(awkward)) File.Delete(awkward);
+            }
+            catch (IOException)
+            {
+                // 임시 파일이 남아도 무해하다.
+            }
+        }
     }
 }
 
@@ -546,7 +584,10 @@ if (graphics is not null && monitors.Count > 0)
                 }
             }
         }
-        Check(slideRendered, "slide texture warped and presented with edit overlay");
+        if (folder is null)
+            Console.WriteLine("SKIP  slide texture warped and presented (샘플 폴더 인자가 없음)");
+        else
+            Check(slideRendered, "slide texture warped and presented with edit overlay");
     }
     catch (Exception ex)
     {

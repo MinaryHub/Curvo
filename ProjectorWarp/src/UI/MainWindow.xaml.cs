@@ -1313,10 +1313,20 @@ public partial class MainWindow : Window
     private static string FormatReleaseSummary(ReleaseInfo release)
     {
         string size = release.Size > 0 ? $" · {release.Size / (1024.0 * 1024.0):F1} MB" : string.Empty;
-        string notes = release.Notes.Length == 0
-            ? string.Empty
-            : "\n" + release.Notes.ReplaceLineEndings(" ").Trim();
-        return $"새 버전 {release.Version} (태그 {release.Tag}){size}{notes}";
+        return $"새 버전 {release.Version} (태그 {release.Tag}){size}{FormatReleaseNotes(release.Notes)}";
+    }
+
+    /// <summary>릴리스 본문은 통째로 넣으면 패널을 밀어내므로 첫 줄만 짧게 보여준다.</summary>
+    private static string FormatReleaseNotes(string notes)
+    {
+        string? first = notes
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+        if (string.IsNullOrEmpty(first)) return string.Empty;
+
+        return first.Length <= AppConfig.UpdateNotesPreviewLength
+            ? "\n" + first
+            : "\n" + first[..AppConfig.UpdateNotesPreviewLength].TrimEnd() + "…";
     }
 
     private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -145,8 +145,11 @@ internal sealed class VideoPlayer : IDisposable
             _engine.SetAutoPlay(autoPlay);
             _engine.SetLoop(loop);
             _engine.SetVolume(Math.Clamp(volume, 0.0, 1.0));
-            // Media Engine 은 URL 을 받으므로 로컬 경로를 file:// URI 로 변환한다.
-            _engine.SetSource(new Uri(Path.GetFullPath(path)).AbsoluteUri);
+            // file:// URI 를 넘기면 안 된다. Media Engine 은 퍼센트 인코딩을 UTF-8 이 아닌
+            // ANSI 코드페이지로 되돌리기 때문에, 한글·일본어가 든 파일명이 0x80070002
+            // (ERROR_FILE_NOT_FOUND) 로 실패하고 "지원하지 않는 형식" 으로 보고된다.
+            // 로컬 경로를 그대로 주면 MF 소스 리졸버가 비ASCII·# ·% 가 든 이름도 모두 연다.
+            _engine.SetSource(Path.GetFullPath(path));
 
             CurrentPath = path;
         }
@@ -255,8 +258,19 @@ internal sealed class VideoPlayer : IDisposable
         }
     }
 
+    /// <summary>ERROR_FILE_NOT_FOUND / ERROR_PATH_NOT_FOUND (HRESULT_FROM_WIN32).</summary>
+    private const uint FileNotFoundHResult = 0x80070002;
+    private const uint PathNotFoundHResult = 0x80070003;
+    private const uint AccessDeniedHResult = 0x80070005;
+
     private static string DescribeError(MediaEngineError error, uint hresult)
     {
+        // 코덱과 무관한 파일 접근 실패가 "지원하지 않는 형식" 으로 보이면 원인을 찾기 어렵다.
+        if (hresult is FileNotFoundHResult or PathNotFoundHResult)
+            return $"파일을 찾을 수 없습니다. (HRESULT 0x{hresult:X8})";
+        if (hresult == AccessDeniedHResult)
+            return $"파일을 읽을 권한이 없습니다. (HRESULT 0x{hresult:X8})";
+
         string reason = error switch
         {
             MediaEngineError.Aborted => "재생이 중단되었습니다.",

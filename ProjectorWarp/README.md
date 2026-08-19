@@ -315,6 +315,10 @@ setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
 
 ## 구현 노트 (설계 결정)
 
+- **Media Engine 소스는 `file://` URI 가 아니라 로컬 경로로 넘깁니다.** Media Engine 은 퍼센트 인코딩을
+  UTF-8 이 아닌 ANSI 코드페이지로 되돌리기 때문에, `new Uri(path).AbsoluteUri` 를 주면 한글·일본어가 든
+  파일명이 `0x80070002`(ERROR_FILE_NOT_FOUND) 로 실패하고 "지원하지 않는 형식" 으로 보고됩니다.
+  경로를 그대로 넘기면 MF 소스 리졸버가 비ASCII·`#`·`%` 가 든 이름을 모두 엽니다.
 - **Win32 상호 운용**: 소스 제너레이터(CsWin32) 대신 `src/Interop/Win32.cs` 에 손으로 작성한 P/Invoke 를 사용합니다.
   창 생성·WndProc·캡처 제외 등 사용 API 범위가 좁고, 생성 코드의 핸들 래핑 없이 원시 `HWND` 를 그대로 다루는 편이
   D3D/DXGI 호출과 맞물릴 때 단순합니다.

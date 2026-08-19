@@ -127,6 +127,8 @@ internal static class AppConfig
     /// <summary>파일 잠금이 풀릴 때까지의 교체 재시도 횟수와 간격(ms).</summary>
     public const int UpdateReplaceAttempts = 20;
     public const int UpdateReplaceRetryMilliseconds = 250;
+    /// <summary>상태 표시에 넣는 릴리스 본문 미리보기 길이(글자).</summary>
+    public const int UpdateNotesPreviewLength = 90;
 
     /// <summary>슬라이드 변환 결과 캐시 폴더.</summary>
     public static string SlideCacheDirectory => Path.Combine(UserDataDirectory, SlideCacheFolderName);
