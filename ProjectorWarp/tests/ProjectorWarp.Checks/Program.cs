@@ -256,6 +256,16 @@ if (graphics is not null && monitors.Count > 0)
         Check(window.RenderTargetView is not null && window.Width > 0 && window.Height > 0,
             $"output window swapchain + present ({window.Width}x{window.Height} on {target.DeviceName})");
         Check(window.IsExcludedFromCapture, "output window excluded from capture (WDA_EXCLUDEFROMCAPTURE)");
+
+        // 항상 위는 기본으로 꺼져 있어야 하고, 켜면 WS_EX_TOPMOST 가 붙어야 한다.
+        bool topmostStyle() =>
+            (Win32.GetWindowLongPtr(window.Handle, Win32.GWL_EXSTYLE).ToInt64() & Win32.WS_EX_TOPMOST) != 0;
+        bool topmostOffByDefault = !window.IsTopmost && !topmostStyle();
+        window.SetTopmost(true);
+        bool topmostApplied = window.IsTopmost && topmostStyle();
+        window.SetTopmost(false);
+        Check(topmostOffByDefault && topmostApplied && !window.IsTopmost && !topmostStyle(),
+            $"output window topmost off by default, toggles on demand (default={topmostOffByDefault} on={topmostApplied})");
     }
     catch (Exception ex)
     {
@@ -277,12 +287,13 @@ if (graphics is not null && monitors.Count > 0)
             StartMinimized = true,
             StartupPresetPath = @"C:\temp\example-preset.json",
             AutoStartRetrySeconds = 45,
-            OutputTopmost = false,
+            // 기본값(꺼짐)과 다른 값이어야 왕복이 실제로 확인된다.
+            OutputTopmost = true,
         };
         bool saved = AppSettingsStore.TrySave(written, out string? saveError);
         AppSettings loaded = AppSettingsStore.Load();
 
-        Check(saved && loaded.AutoStartProjection && loaded.StartMinimized && !loaded.OutputTopmost
+        Check(saved && loaded.AutoStartProjection && loaded.StartMinimized && loaded.OutputTopmost
               && loaded.AutoStartRetrySeconds == 45 && loaded.StartupPresetPath == written.StartupPresetPath,
             $"app settings round trip{(saved ? string.Empty : " (save failed: " + saveError + ")")}");
     }

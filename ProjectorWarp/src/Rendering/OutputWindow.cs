@@ -60,7 +60,7 @@ internal sealed class OutputWindow : IDisposable
 
     public bool IsFullscreen => _isFullscreen;
 
-    public bool IsTopmost { get; private set; } = true;
+    public bool IsTopmost { get; private set; }
 
     /// <summary>WDA_EXCLUDEFROMCAPTURE 적용 성공 여부. 실패 시 피드백 루프 경고가 필요하다.</summary>
     public bool IsExcludedFromCapture { get; private set; }
@@ -95,7 +95,8 @@ internal sealed class OutputWindow : IDisposable
     {
         Win32.RECT bounds = _monitor.Bounds;
         _handle = Win32.CreateWindowExW(
-            Win32.WS_EX_TOPMOST,
+            // 항상 위는 기본으로 켜지 않는다. 필요하면 SetTopmost 로 올린다.
+            0,
             new IntPtr(_classAtom),
             AppConfig.OutputWindowTitle,
             Win32.WS_POPUP,

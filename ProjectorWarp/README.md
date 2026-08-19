@@ -205,7 +205,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 | 파일 | 내용 | 저장 시점 |
 |---|---|---|
 | `%AppData%\ProjectorWarp\last-session.json` | 보정값 · 캡처 소스 · 출력 모니터 | 앱 종료 시 자동, [현재 설정 저장] 클릭 시 |
-| `%AppData%\ProjectorWarp\app-settings.json` | 자동 시작 옵션, 항상 위 여부, 시작 프리셋 경로 | 옵션을 바꿀 때마다 즉시 |
+| `%AppData%\ProjectorWarp\app-settings.json` | 자동 시작 옵션, 항상 위 여부(기본 꺼짐), 시작 프리셋 경로 | 옵션을 바꿀 때마다 즉시 |
 | 임의 위치 `*.json` | 프리셋 (Ctrl+S 로 다른 이름으로 저장) | 수동 |
 
 **[현재 설정 저장]** 은 보정값을 *시작 시 사용할 프리셋* 으로 지정된 파일에 씁니다.

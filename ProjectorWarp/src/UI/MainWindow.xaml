@@ -77,7 +77,7 @@
             <WrapPanel Margin="0,6,0,0">
               <Button x:Name="StartOutputButton" Content="출력 시작" Click="OnStartOutputClick" />
               <Button x:Name="StopOutputButton" Content="출력 중지" Click="OnStopOutputClick" />
-              <CheckBox x:Name="TopmostCheck" Content="항상 위" IsChecked="True" Margin="8,4,0,0"
+              <CheckBox x:Name="TopmostCheck" Content="항상 위" IsChecked="False" Margin="8,4,0,0"
                         Checked="OnTopmostChanged" Unchecked="OnTopmostChanged" />
             </WrapPanel>
             <TextBlock x:Name="FeedbackWarning" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,6,0,0"

@@ -22,8 +22,8 @@ internal sealed class AppSettings
     /// <summary>자동 시작 시 캡처 대상을 찾기 위해 재시도할 최대 시간(초).</summary>
     public int AutoStartRetrySeconds { get; set; } = AppConfig.DefaultAutoStartRetrySeconds;
 
-    /// <summary>항상 위 표시 유지.</summary>
-    public bool OutputTopmost { get; set; } = true;
+    /// <summary>항상 위 표시 유지. 기본은 꺼짐(다른 창을 가리지 않는다).</summary>
+    public bool OutputTopmost { get; set; }
 
     /// <summary>앱을 시작할 때 새 버전이 있는지 조용히 확인한다.</summary>
     public bool CheckForUpdatesOnStartup { get; set; } = true;
