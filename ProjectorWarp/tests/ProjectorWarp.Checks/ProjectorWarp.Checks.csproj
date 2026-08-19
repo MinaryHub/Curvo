@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    기하 계산 · HLSL 컴파일 · D3D11 리소스 생성 · WGC 캡처 경로를
+    프로젝터 출력 창을 띄우지 않고 검증하는 콘솔 체크.
+    실행 방법은 README 의 "검증 스크립트" 항목 참고.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>ProjectorWarp</RootNamespace>
+    <AssemblyName>ProjectorWarp.Checks</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\..\src\AppConfig.cs" />
+    <Compile Include="..\..\src\Geometry\*.cs" />
+    <Compile Include="..\..\src\Interop\*.cs" />
+    <Compile Include="..\..\src\Capture\*.cs" />
+    <Compile Include="..\..\src\Presets\*.cs" />
+    <Compile Include="..\..\src\Media\*.cs" />
+    <Compile Include="..\..\src\Rendering\GraphicsDevice.cs" />
+    <Compile Include="..\..\src\Rendering\MeshBuilder.cs" />
+    <Compile Include="..\..\src\Rendering\OutputWindow.cs" />
+    <Compile Include="..\..\src\Rendering\OverlayState.cs" />
+    <Compile Include="..\..\src\Rendering\ShaderLoader.cs" />
+    <Compile Include="..\..\src\Rendering\WarpRenderer.cs" />
+    <EmbeddedResource Include="..\..\src\Rendering\Shaders\warp.hlsl"
+                      LogicalName="ProjectorWarp.src.Rendering.Shaders.warp.hlsl" />
+    <EmbeddedResource Include="..\..\src\Rendering\Shaders\overlay.hlsl"
+                      LogicalName="ProjectorWarp.src.Rendering.Shaders.overlay.hlsl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
+    <PackageReference Include="Vortice.DXGI" Version="3.8.3" />
+  </ItemGroup>
+
+</Project>
