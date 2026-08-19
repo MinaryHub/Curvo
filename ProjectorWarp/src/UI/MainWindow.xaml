@@ -31,22 +31,6 @@
         <GroupBox Header="1. 캡처 소스">
           <StackPanel>
             <TabControl x:Name="SourceTabs" SelectionChanged="OnSourceTabChanged">
-              <TabItem Header="창">
-                <ListBox x:Name="WindowList" Height="150" SelectionChanged="OnWindowSelectionChanged">
-                  <ListBox.ItemTemplate>
-                    <DataTemplate>
-                      <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" MaxWidth="250" />
-                        <TextBlock Text="{Binding ProcessName}" Opacity="0.55" Margin="8,0,0,0" />
-                      </StackPanel>
-                    </DataTemplate>
-                  </ListBox.ItemTemplate>
-                </ListBox>
-              </TabItem>
-              <TabItem Header="모니터 전체">
-                <ListBox x:Name="MonitorSourceList" Height="150" SelectionChanged="OnMonitorSourceSelectionChanged" />
-              </TabItem>
               <TabItem Header="내장 재생">
                 <StackPanel Height="150" Margin="4">
                   <TextBlock Text="외부 플레이어 · PowerPoint 없이 앱이 직접 재생합니다."
@@ -60,6 +44,19 @@
                   <TextBlock x:Name="MediaHintText" TextWrapping="Wrap" Opacity="0.65" Margin="0,4,0,0"
                              Text="PPT 는 가져올 때 PowerPoint 로 이미지 변환을 한 번 수행합니다. PowerPoint 가 없으면 PDF 로 내보낸 파일을 사용하세요." />
                 </StackPanel>
+              </TabItem>
+              <TabItem Header="창">
+                <ListBox x:Name="WindowList" Height="150" SelectionChanged="OnWindowSelectionChanged">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" MaxWidth="250" />
+                        <TextBlock Text="{Binding ProcessName}" Opacity="0.55" Margin="8,0,0,0" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
               </TabItem>
             </TabControl>
 
@@ -353,6 +350,27 @@
               <Button x:Name="ClearStartupPresetButton" Content="마지막 상태 사용" Click="OnClearStartupPresetClick" />
               <Button x:Name="CancelAutoStartButton" Content="자동 시작 취소" Click="OnCancelAutoStartClick" />
             </WrapPanel>
+          </StackPanel>
+        </GroupBox>
+
+        <!-- 9. 버전 · 업데이트 -->
+        <GroupBox Header="9. 버전 · 업데이트">
+          <StackPanel>
+            <TextBlock x:Name="VersionText" Text="버전 —" />
+
+            <TextBlock x:Name="UpdateSourceText" Text="업데이트 확인 대상 —" Opacity="0.6" Margin="0,2,0,0"
+                       ToolTip="배포처는 빌드에 고정되어 있습니다(AppConfig.UpdateRepository)." />
+            <CheckBox x:Name="CheckUpdateOnStartupCheck" Content="앱을 시작할 때 새 버전 확인" Margin="0,8,0,0"
+                      Checked="OnUpdateOptionChanged" Unchecked="OnUpdateOptionChanged" />
+
+            <WrapPanel Margin="0,6,0,0">
+              <Button x:Name="CheckUpdateButton" Content="업데이트 확인" Click="OnCheckUpdateClick" />
+              <Button x:Name="ApplyUpdateButton" Content="설치 후 재시작" Click="OnApplyUpdateClick"
+                      Visibility="Collapsed" />
+            </WrapPanel>
+            <TextBlock x:Name="UpdateStatusText" TextWrapping="Wrap" Opacity="0.75" Margin="0,2,0,0" Text="" />
+            <ProgressBar x:Name="UpdateProgress" Height="5" Margin="0,4,0,0" Maximum="1"
+                         Visibility="Collapsed" />
           </StackPanel>
         </GroupBox>
 

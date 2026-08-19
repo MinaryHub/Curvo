@@ -25,6 +25,9 @@ internal sealed class AppSettings
     /// <summary>항상 위 표시 유지.</summary>
     public bool OutputTopmost { get; set; } = true;
 
+    /// <summary>앱을 시작할 때 새 버전이 있는지 조용히 확인한다.</summary>
+    public bool CheckForUpdatesOnStartup { get; set; } = true;
+
     public AppSettings Clone() => new()
     {
         LaunchAtLogon = LaunchAtLogon,
@@ -33,6 +36,7 @@ internal sealed class AppSettings
         StartupPresetPath = StartupPresetPath,
         AutoStartRetrySeconds = AutoStartRetrySeconds,
         OutputTopmost = OutputTopmost,
+        CheckForUpdatesOnStartup = CheckForUpdatesOnStartup,
     };
 }
 

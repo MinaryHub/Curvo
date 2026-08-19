@@ -6,7 +6,7 @@
 소스는 두 가지 방식으로 받을 수 있습니다.
 
 - **내장 재생** — 동영상 파일이나 PPT·PDF·이미지를 앱에 직접 열어 재생합니다. 외부 플레이어나 PowerPoint 를 띄워 둘 필요가 없습니다.
-- **화면 캡처** — 이미 실행 중인 창이나 모니터 전체를 캡처합니다.
+- **화면 캡처** — 이미 실행 중인 창을 캡처합니다.
 
 어느 쪽이든 베지어 곡면 + 코너 핀으로 기하 보정한 뒤 프로젝터가 연결된 디스플레이에 전체화면으로 출력합니다.
 
@@ -17,7 +17,7 @@
 ```
 [동영상 파일]  → Media Foundation Media Engine (하드웨어 디코딩) ┐
 [PPT/PDF/이미지] → 슬라이드 이미지 → D3D11 텍스처              ├→ ShaderResourceView
-[소스 창 / 모니터] → Windows.Graphics.Capture FramePool        ┘
+[소스 창]      → Windows.Graphics.Capture FramePool            ┘
    → 워핑 메시 렌더 (VS: 베지어 곡면 정점 / PS: 텍스처 샘플 + 색보정 + 블렌딩)
    → DXGI Flip-model SwapChain
    → [프로젝터 출력 창 (borderless fullscreen)]
@@ -78,6 +78,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 - 모니터 열거, 캡처 아이템 생성, 실제 WGC 프레임 수신
 - 출력 창 스왑체인 생성 · 프레젠트 · 캡처 제외 적용
 - 앱 설정 저장/복원, 로그온 자동 실행 등록/해제, 프리셋 파일 왕복
+- 자동 업데이트: 릴리스 JSON 해석 · 태그 버전 비교 · 저장소 표기 정규화
 - 내장 동영상: 파일 열기 · 프레임을 D3D11 텍스처로 전송 · 실제 픽셀 내용 · 길이 · 일시정지
 - 슬라이드: 이미지 목록 / PDF 변환(캐시 포함) / PPTX 변환(PowerPoint)
 - 내장 미디어 프레임을 워핑해 출력 창에 실제로 프레젠트
@@ -88,10 +89,9 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ## 사용 순서
 
-1. **소스 선택** — 세 가지 탭 중 하나를 씁니다.
-   - **[내장 재생]** — [동영상 열기] 또는 [슬라이드 열기] 로 파일을 고르면 즉시 재생이 시작됩니다(권장).
+1. **소스 선택** — 두 가지 탭 중 하나를 씁니다.
+   - **[내장 재생]** — [동영상 열기] 또는 [슬라이드 열기] 로 파일을 고르면 즉시 재생이 시작됩니다(권장, 기본 탭).
    - **[창]** — 실행 중인 창을 캡처합니다. `PowerPoint` / `플레이어` 버튼으로 바로 찾을 수 있고, 상단에 실시간 미리보기가 표시됩니다.
-   - **[모니터 전체]** — 디스플레이 하나를 통째로 캡처합니다.
 2. **출력 모니터 선택** 후 [출력 시작] — 해당 모니터에 borderless 전체화면 창이 열립니다.
 3. **[캡처 시작]** — 소스 화면이 프로젝터로 나가기 시작합니다.
 4. **F1** 로 편집 모드를 켜고 제어점을 드래그해 곡면을 맞춥니다. **F2** 로 테스트 패턴을 띄우면 정렬이 쉽습니다.
@@ -232,6 +232,70 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ---
 
+## 버전 · 자동 업데이트
+
+컨트롤 패널 제목과 **[9. 버전 · 업데이트]** 에 현재 버전이 표시됩니다.
+버전 값은 `ProjectorWarp.csproj` 의 `<Version>` 이고, **GitHub 릴리스 태그와 이 값을 맞춰야** 새 버전으로 인식됩니다.
+
+### 사용하는 쪽
+
+설정할 것이 없습니다. 배포처는 빌드에 고정되어 있습니다(`AppConfig.UpdateRepository`).
+
+1. `앱을 시작할 때 새 버전 확인` 을 켜 두면 시작 5초 뒤에 조용히 확인하고, 새 버전이 있을 때만 알립니다.
+   패널에는 확인 대상 저장소가 읽기 전용으로 표시됩니다.
+2. 새 버전이 있으면 **[설치 후 재시작]** 버튼이 나타납니다. 누르면 내려받아 교체하고 앱을 다시 시작합니다.
+   투사 중에 저절로 재시작되는 일은 없습니다 — 누르지 않으면 아무 일도 일어나지 않습니다.
+
+### 배포하는 쪽
+
+```powershell
+# 1. 버전을 올린다 (ProjectorWarp.csproj)
+#    <Version>1.0.1</Version>
+
+# 2. 단일 실행파일을 만든다
+dotnet publish -c Release -o publish
+
+# 3. GitHub 에 태그 v1.0.1 로 릴리스를 만들고 publish\ProjectorWarp.exe 를 자산으로 올린다
+```
+
+| 항목 | 규칙 |
+|---|---|
+| 릴리스 태그 | `v1.0.1` 또는 `1.0.1` (`-beta` 같은 접미사는 무시하고 숫자만 비교) |
+| 자산 이름 | `ProjectorWarp.exe` (없으면 릴리스의 첫 번째 `.exe`) |
+| 조회 주소 | `https://api.github.com/repos/{owner}/{repo}/releases/latest` |
+| 배포처 변경 | `src/AppConfig.cs` 의 `UpdateRepository` 상수 한 줄 |
+| 비공개 저장소 | 아래 참고 — 실행하는 환경에 토큰이 필요합니다 |
+
+### 비공개 저장소인 경우
+
+공개 릴리스는 인증 없이 동작합니다. 저장소가 비공개면 GitHub 이 릴리스 조회에 `404` 를 돌려주므로
+읽기 권한(`contents: read`) 토큰을 **환경 변수**로 넘겨야 합니다.
+
+```powershell
+# 배포 시 한 번 (사용자가 앱에서 입력할 값이 아니다)
+setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
+```
+
+토큰이 있으면 자산도 `browser_download_url` 대신 릴리스 자산 API 로 내려받습니다(비공개 저장소는 전자로 받을 수 없음).
+
+> 토큰을 실행파일이나 소스에 넣지 마세요. 배포된 exe 에서 그대로 추출됩니다.
+> 앱은 토큰을 저장하지도, 화면에 표시하지도 않습니다.
+
+교체 방식 — 단일 실행파일은 실행 중 자기 자신을 덮어쓸 수 없으므로 **새 exe 가 교체를 수행합니다.**
+
+```
+새 exe 를 %LocalAppData%\ProjectorWarp\Update\ 로 내려받기
+  → 새 exe 를 `--apply-update <대상 exe> <이전 PID>` 로 실행
+  → 앱이 마지막 상태를 저장하며 종료
+  → 새 프로세스가 이전 PID 종료를 기다린 뒤 자신을 대상 경로로 복사(실패하면 .bak 복원)
+  → 대상 exe 를 다시 실행
+```
+
+> 앱이 쓰기 권한 없는 폴더(예: `C:\Program Files`)에 있으면 교체가 실패하고 이유가 표시됩니다.
+> 사용자 폴더에 두고 쓰는 것을 권장합니다.
+
+---
+
 ## 알려진 제약
 
 - **DRM 보호 콘텐츠**(Netflix, Disney+, Amazon Prime Video 등)는 캡처 시 검은 화면으로 나오고,
@@ -287,7 +351,8 @@ ProjectorWarp/
 │  ├─ Geometry/           # Bezier, Homography, ControlPointGrid, UndoHistory
 │  ├─ UI/                 # WPF 컨트롤 패널, 오버레이 에디터
 │  ├─ Presets/            # 프리셋 · 앱 설정 JSON 직렬화
-│  └─ Interop/            # Win32 / WinRT P/Invoke, 로그온 자동 실행 레지스트리
+│  ├─ Interop/            # Win32 / WinRT P/Invoke, 로그온 자동 실행 레지스트리
+│  └─ Update/             # GitHub Releases 확인 · 다운로드 · 실행파일 교체
 ├─ tests/ProjectorWarp.Checks/   # 셰이더 컴파일 · 기하 계산 검증
 └─ docs/
 ```

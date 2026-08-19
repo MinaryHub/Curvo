@@ -94,6 +94,40 @@ internal static class AppConfig
     /// <summary>동영상 기본 음량.</summary>
     public const double DefaultVolume = 0.8;
 
+    // ---- 자동 업데이트 ----------------------------------------------------
+    /// <summary>
+    /// 업데이트를 받아올 GitHub 저장소. 배포처를 옮길 때 <b>이 한 줄만</b> 바꾸면 된다.
+    /// (사용자가 앱에서 입력하는 값이 아니다.)
+    /// </summary>
+    public const string UpdateRepository = "knoxxr/Curvo";
+    /// <summary>GitHub 최신 릴리스 조회 주소. {0} 에 "owner/repo" 가 들어간다.</summary>
+    public const string UpdateReleaseApiFormat = "https://api.github.com/repos/{0}/releases/latest";
+    public const string UpdateApiMediaType = "application/vnd.github+json";
+    /// <summary>릴리스 자산을 API 로 내려받을 때의 Accept 값.</summary>
+    public const string UpdateAssetMediaType = "application/octet-stream";
+    /// <summary>
+    /// 비공개 저장소일 때만 필요한 읽기 전용 토큰을 담는 환경 변수 이름.
+    /// 실행파일에 토큰을 박아 배포하면 그대로 유출되므로 반드시 환경에서 읽는다.
+    /// </summary>
+    public const string UpdateTokenEnvironmentVariable = "PROJECTORWARP_GITHUB_TOKEN";
+    /// <summary>릴리스에서 내려받을 자산 이름(없으면 첫 번째 exe 를 쓴다).</summary>
+    public const string UpdateAssetName = "ProjectorWarp.exe";
+    /// <summary>내려받은 exe 를 두는 폴더 이름(%LocalAppData%\ProjectorWarp 하위).</summary>
+    public const string UpdateStagingFolderName = "Update";
+    public const string UpdatePartialSuffix = ".part";
+    public const string UpdateBackupSuffix = ".bak";
+    /// <summary>실행 중인 exe 를 교체하기 위해 새 프로세스가 붙는 인자.</summary>
+    public const string ApplyUpdateArgument = "--apply-update";
+    public const int UpdateRequestTimeoutSeconds = 30;
+    public const int UpdateDownloadBufferBytes = 128 * 1024;
+    /// <summary>시작 시 업데이트 확인을 이만큼 미뤄 첫 화면 표시를 방해하지 않는다(초).</summary>
+    public const int UpdateStartupCheckDelaySeconds = 5;
+    /// <summary>교체 전에 이전 프로세스 종료를 기다리는 최대 시간(ms).</summary>
+    public const int UpdateProcessExitTimeoutMilliseconds = 15000;
+    /// <summary>파일 잠금이 풀릴 때까지의 교체 재시도 횟수와 간격(ms).</summary>
+    public const int UpdateReplaceAttempts = 20;
+    public const int UpdateReplaceRetryMilliseconds = 250;
+
     /// <summary>슬라이드 변환 결과 캐시 폴더.</summary>
     public static string SlideCacheDirectory => Path.Combine(UserDataDirectory, SlideCacheFolderName);
 

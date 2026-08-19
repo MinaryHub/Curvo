@@ -10,6 +10,7 @@ using ProjectorWarp.Interop;
 using ProjectorWarp.Media;
 using ProjectorWarp.Presets;
 using ProjectorWarp.Rendering;
+using ProjectorWarp.Update;
 
 namespace ProjectorWarp.UI;
 
@@ -41,6 +42,11 @@ public partial class MainWindow : Window
     private DispatcherTimer? _slideAdvanceTimer;
     private bool _updatingPosition;
 
+    /// <summary>업데이트 확인으로 찾은 새 릴리스와, 내려받아 둔 exe 경로.</summary>
+    private ReleaseInfo? _pendingRelease;
+    private string? _stagedUpdatePath;
+    private bool _updateBusy;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -63,6 +69,10 @@ public partial class MainWindow : Window
 
         _engine.MediaEnded += () => StatusText.Text = "재생이 끝났습니다.";
         _engine.SlideChanged += UpdatePlaybackUi;
+
+        Title = $"{AppConfig.AppName} {UpdateService.CurrentVersionText} — 프로젝터 곡면 워핑";
+        VersionText.Text = $"버전 {UpdateService.CurrentVersionText}";
+        UpdateSourceText.Text = $"업데이트 확인 대상: {UpdateService.Repository}";
 
         PopulateStaticCombos();
         StartPlaybackTimer();
@@ -122,6 +132,7 @@ public partial class MainWindow : Window
 
         if (_appSettings.StartMinimized) WindowState = WindowState.Minimized;
         if (_appSettings.AutoStartProjection) BeginAutoStart();
+        if (_appSettings.CheckForUpdatesOnStartup) _ = CheckForUpdatesAsync(quiet: true);
     }
 
     // ---- 목록 -------------------------------------------------------------
@@ -135,8 +146,6 @@ public partial class MainWindow : Window
         _monitors = SourceEnumerator.EnumerateMonitors();
 
         WindowList.ItemsSource = _windows.Select(WindowListItem.From).ToList();
-        MonitorSourceList.ItemsSource = _monitors.Select(MonitorListItem.From).ToList();
-        MonitorSourceList.DisplayMemberPath = nameof(MonitorListItem.Description);
 
         MonitorInfo? previousOutput = SelectedOutputMonitor();
         OutputMonitorCombo.ItemsSource = _monitors.Select(MonitorListItem.From).ToList();
@@ -155,24 +164,19 @@ public partial class MainWindow : Window
 
     private WindowInfo? SelectedWindow() => (WindowList.SelectedItem as WindowListItem)?.Window;
 
-    private MonitorInfo? SelectedSourceMonitor() => (MonitorSourceList.SelectedItem as MonitorListItem)?.Monitor;
+    /// <summary>SourceTabs 의 탭 순서. XAML 의 TabItem 순서와 일치해야 한다.</summary>
+    private const int MediaSourceTabIndex = 0;
 
-    private bool IsWindowSourceTab => SourceTabs.SelectedIndex == 0;
+    private const int WindowSourceTabIndex = 1;
 
-    private bool IsMonitorSourceTab => SourceTabs.SelectedIndex == 1;
+    private bool IsWindowSourceTab => SourceTabs.SelectedIndex == WindowSourceTabIndex;
 
-    private bool IsMediaSourceTab => SourceTabs.SelectedIndex == 2;
+    private bool IsMediaSourceTab => SourceTabs.SelectedIndex == MediaSourceTabIndex;
 
     private CaptureTarget? BuildSelectedTarget()
     {
-        if (IsWindowSourceTab)
-        {
-            WindowInfo? window = SelectedWindow();
-            return window is null ? null : CaptureTarget.FromWindow(window);
-        }
-
-        MonitorInfo? monitor = SelectedSourceMonitor();
-        return monitor is null ? null : CaptureTarget.FromMonitor(monitor);
+        WindowInfo? window = SelectedWindow();
+        return window is null ? null : CaptureTarget.FromWindow(window);
     }
 
     // ---- 이벤트 핸들러 ----------------------------------------------------
@@ -197,14 +201,8 @@ public partial class MainWindow : Window
         UpdateFeedbackWarning();
     }
 
-    private void OnMonitorSourceSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        UpdateThumbnail();
-        UpdateFeedbackWarning();
-    }
-
     private void OnPowerPointShortcutClick(object sender, RoutedEventArgs e)
-        => SelectByProcessNames(SourceEnumerator.PowerPointProcessNames, "PowerPoint 창을 찾지 못했습니다. 슬라이드 쇼를 창 모드로 실행하거나 보조 디스플레이 모니터 캡처를 사용하세요.");
+        => SelectByProcessNames(SourceEnumerator.PowerPointProcessNames, "PowerPoint 창을 찾지 못했습니다. 슬라이드 쇼를 창 모드로 실행하거나 [내장 재생] 으로 파일을 직접 열어 보세요.");
 
     private void OnPlayerShortcutClick(object sender, RoutedEventArgs e)
         => SelectByProcessNames(SourceEnumerator.MediaPlayerProcessNames, "지원되는 미디어 플레이어 창을 찾지 못했습니다.");
@@ -219,7 +217,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        SourceTabs.SelectedIndex = 0;
+        SourceTabs.SelectedIndex = WindowSourceTabIndex;
         int index = _windows.IndexOf(match);
         WindowList.SelectedIndex = index;
         WindowList.ScrollIntoView(WindowList.SelectedItem);
@@ -523,12 +521,7 @@ public partial class MainWindow : Window
     {
         if (preset.Source.Kind == CaptureSourceKind.Monitor)
         {
-            MonitorInfo? monitor = SourceEnumerator.FindMonitor(_monitors, preset.Source.MonitorDeviceName);
-            if (monitor is null) return;
-
-            SourceTabs.SelectedIndex = 1;
-            MonitorSourceList.SelectedIndex = _monitors.IndexOf(monitor);
-            _engine.StartCapture(CaptureTarget.FromMonitor(monitor));
+            StatusText.Text = "모니터 전체 캡처는 더 이상 지원하지 않습니다. [내장 재생] 또는 [창] 에서 소스를 선택하세요.";
             return;
         }
 
@@ -539,7 +532,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        SourceTabs.SelectedIndex = 0;
+        SourceTabs.SelectedIndex = WindowSourceTabIndex;
         WindowList.SelectedIndex = _windows.IndexOf(window);
         _engine.StartCapture(CaptureTarget.FromWindow(window));
     }
@@ -610,7 +603,7 @@ public partial class MainWindow : Window
             _suppressSync = false;
         }
 
-        SourceTabs.SelectedIndex = 2;
+        SourceTabs.SelectedIndex = MediaSourceTabIndex;
         UpdatePlaybackUi();
     }
 
@@ -619,18 +612,11 @@ public partial class MainWindow : Window
     {
         if (preset.Media.IsActive) return;
 
-        if (preset.Source.Kind == CaptureSourceKind.Monitor)
-        {
-            MonitorInfo? monitor = SourceEnumerator.FindMonitor(_monitors, preset.Source.MonitorDeviceName);
-            if (monitor is null) return;
-            SourceTabs.SelectedIndex = 1;
-            MonitorSourceList.SelectedIndex = _monitors.IndexOf(monitor);
-            return;
-        }
+        if (preset.Source.Kind == CaptureSourceKind.Monitor) return;
 
         WindowInfo? window = SourceEnumerator.FindWindow(_windows, preset.Source.MatchTitle, preset.Source.MatchProcess);
         if (window is null) return;
-        SourceTabs.SelectedIndex = 0;
+        SourceTabs.SelectedIndex = WindowSourceTabIndex;
         WindowList.SelectedIndex = _windows.IndexOf(window);
     }
 
@@ -688,11 +674,6 @@ public partial class MainWindow : Window
         {
             WindowInfo? window = SelectedWindow();
             if (window is not null && Win32.IsWindow(window.Handle)) sourceMonitor = window.MonitorHandle;
-        }
-        else
-        {
-            MonitorInfo? monitor = SelectedSourceMonitor();
-            if (monitor is not null) sourceMonitor = monitor.Handle;
         }
 
         bool sameMonitor = sourceMonitor != IntPtr.Zero && sourceMonitor == output.Handle;
@@ -838,7 +819,7 @@ public partial class MainWindow : Window
             Loop = LoopCheck.IsChecked == true,
             Volume = VolumeSlider.Value,
         };
-        SourceTabs.SelectedIndex = 2;
+        SourceTabs.SelectedIndex = MediaSourceTabIndex;
         await StartCurrentMediaAsync();
     }
 
@@ -869,7 +850,7 @@ public partial class MainWindow : Window
             Path = primary,
             SlideIntervalSeconds = SlideIntervalSlider.Value,
         };
-        SourceTabs.SelectedIndex = 2;
+        SourceTabs.SelectedIndex = MediaSourceTabIndex;
         await StartCurrentMediaAsync();
     }
 
@@ -1037,6 +1018,7 @@ public partial class MainWindow : Window
                 ? "마지막 상태 (앱 종료 시 자동 저장됨)"
                 : _appSettings.StartupPresetPath;
             CancelAutoStartButton.IsEnabled = _autoStartTimer is not null;
+            CheckUpdateOnStartupCheck.IsChecked = _appSettings.CheckForUpdatesOnStartup;
         }
         finally
         {
@@ -1212,18 +1194,11 @@ public partial class MainWindow : Window
         PresetSource? source = _startupPreset?.Source;
         if (source is null) return BuildSelectedTarget();
 
-        if (source.Kind == CaptureSourceKind.Monitor)
-        {
-            MonitorInfo? monitor = SourceEnumerator.FindMonitor(_monitors, source.MonitorDeviceName);
-            if (monitor is null) return null;
-            SourceTabs.SelectedIndex = 1;
-            MonitorSourceList.SelectedIndex = _monitors.IndexOf(monitor);
-            return CaptureTarget.FromMonitor(monitor);
-        }
+        if (source.Kind == CaptureSourceKind.Monitor) return null;
 
         WindowInfo? window = SourceEnumerator.FindWindow(_windows, source.MatchTitle, source.MatchProcess);
         if (window is null) return null;
-        SourceTabs.SelectedIndex = 0;
+        SourceTabs.SelectedIndex = WindowSourceTabIndex;
         WindowList.SelectedIndex = _windows.IndexOf(window);
         return CaptureTarget.FromWindow(window);
     }
@@ -1247,6 +1222,103 @@ public partial class MainWindow : Window
     }
 
     // ---- 종료 -------------------------------------------------------------
+    // ---- 버전 · 자동 업데이트 ---------------------------------------------
+    private void OnUpdateOptionChanged(object sender, RoutedEventArgs e)
+    {
+        if (_suppressSync) return;
+        _appSettings.CheckForUpdatesOnStartup = CheckUpdateOnStartupCheck.IsChecked == true;
+        SaveAppSettings(quiet: true);
+    }
+
+    private void OnCheckUpdateClick(object sender, RoutedEventArgs e) => _ = CheckForUpdatesAsync(quiet: false);
+
+    /// <summary>최신 릴리스를 조회한다. quiet 이면 시작 직후 조용히 확인하는 경로다.</summary>
+    private async Task CheckForUpdatesAsync(bool quiet)
+    {
+        if (_updateBusy) return;
+
+        // 첫 화면 표시와 자동 시작을 방해하지 않도록 시작 직후 확인은 잠깐 미룬다.
+        if (quiet) await Task.Delay(TimeSpan.FromSeconds(AppConfig.UpdateStartupCheckDelaySeconds));
+
+        _updateBusy = true;
+        CheckUpdateButton.IsEnabled = false;
+        UpdateStatusText.Text = "새 버전을 확인하는 중…";
+        try
+        {
+            ReleaseInfo? release = await UpdateService.CheckAsync(CancellationToken.None);
+            if (release is null)
+            {
+                _pendingRelease = null;
+                ApplyUpdateButton.Visibility = Visibility.Collapsed;
+                UpdateStatusText.Text = $"최신 버전입니다. (버전 {UpdateService.CurrentVersionText})";
+                return;
+            }
+
+            _pendingRelease = release;
+            _stagedUpdatePath = null;
+            ApplyUpdateButton.Visibility = Visibility.Visible;
+            UpdateStatusText.Text = FormatReleaseSummary(release);
+            StatusText.Text = $"새 버전 {release.Version} 이 있습니다. [9. 버전 · 업데이트] 에서 설치할 수 있습니다.";
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = ex is InvalidOperationException
+                ? ex.Message
+                : $"업데이트 확인에 실패했습니다: {ex.Message}";
+        }
+        finally
+        {
+            _updateBusy = false;
+            CheckUpdateButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnApplyUpdateClick(object sender, RoutedEventArgs e)
+    {
+        ReleaseInfo? release = _pendingRelease;
+        if (release is null || _updateBusy) return;
+
+        MessageBoxResult answer = MessageBox.Show(this,
+            $"버전 {release.Version} 을 설치하고 앱을 재시작합니다.\n투사가 잠시 중단됩니다. 계속할까요?",
+            AppConfig.AppName, MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+
+        _updateBusy = true;
+        ApplyUpdateButton.IsEnabled = false;
+        CheckUpdateButton.IsEnabled = false;
+        UpdateProgress.Visibility = Visibility.Visible;
+        UpdateProgress.Value = 0;
+        try
+        {
+            UpdateStatusText.Text = $"{release.AssetName} 을 내려받는 중…";
+            var progress = new Progress<double>(value => UpdateProgress.Value = value);
+            _stagedUpdatePath ??= await UpdateService.DownloadAsync(release, progress, CancellationToken.None);
+
+            UpdateStatusText.Text = "설치하고 재시작합니다…";
+            UpdateService.StartApply(_stagedUpdatePath);
+
+            // Close 로 끝내야 마지막 세션과 앱 설정이 저장된다.
+            Close();
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = $"업데이트를 설치하지 못했습니다: {ex.Message}";
+            UpdateProgress.Visibility = Visibility.Collapsed;
+            ApplyUpdateButton.IsEnabled = true;
+            CheckUpdateButton.IsEnabled = true;
+            _updateBusy = false;
+        }
+    }
+
+    private static string FormatReleaseSummary(ReleaseInfo release)
+    {
+        string size = release.Size > 0 ? $" · {release.Size / (1024.0 * 1024.0):F1} MB" : string.Empty;
+        string notes = release.Notes.Length == 0
+            ? string.Empty
+            : "\n" + release.Notes.ReplaceLineEndings(" ").Trim();
+        return $"새 버전 {release.Version} (태그 {release.Tag}){size}{notes}";
+    }
+
     private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
     {
         CancelAutoStart(null);

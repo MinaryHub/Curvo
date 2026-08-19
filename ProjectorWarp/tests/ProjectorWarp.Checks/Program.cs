@@ -6,6 +6,7 @@ using ProjectorWarp.Interop;
 using ProjectorWarp.Media;
 using ProjectorWarp.Presets;
 using ProjectorWarp.Rendering;
+using ProjectorWarp.Update;
 using Vortice.Direct3D11;
 using Windows.Graphics;
 
@@ -541,6 +542,57 @@ if (graphics is not null && monitors.Count > 0)
         Console.WriteLine(ex.ToString());
         Check(false, "media through warp pipeline");
     }
+}
+
+// 22. 자동 업데이트: 릴리스 응답 해석과 저장소 표기 정규화 (네트워크 없이 확인)
+{
+    const string releaseJson = """
+    {
+      "tag_name": "v1.2.3",
+      "body": "동영상 재생 오류 수정",
+      "assets": [
+        { "name": "notes.txt", "size": 12, "browser_download_url": "https://example.invalid/notes.txt",
+          "url": "https://api.github.com/repos/o/r/releases/assets/1" },
+        { "name": "ProjectorWarp.exe", "size": 73400320,
+          "browser_download_url": "https://example.invalid/ProjectorWarp.exe",
+          "url": "https://api.github.com/repos/o/r/releases/assets/2" }
+      ]
+    }
+    """;
+
+    bool parsed = UpdateService.TryParseRelease(releaseJson, out ReleaseInfo? release, out string? error);
+    Check(parsed && release is not null, $"release json parsed {error}");
+    Check(release?.Version == new Version(1, 2, 3), $"release version from tag ({release?.Version})");
+    Check(release?.AssetName == AppConfig.UpdateAssetName, $"release asset picked ({release?.AssetName})");
+    Check(release?.Size == 73400320 && release?.Notes == "동영상 재생 오류 수정", "release asset size and notes");
+
+    Check(!UpdateService.TryParseRelease("""{ "tag_name": "v9.9.9", "assets": [] }""", out _, out _),
+        "release without downloadable asset rejected");
+    Check(!UpdateService.TryParseRelease("""{ "tag_name": "nightly" }""", out _, out _),
+        "release with unparsable tag rejected");
+
+    bool tags =
+        UpdateService.TryParseVersion("v1.0.1", out Version? a) && a == new Version(1, 0, 1) &&
+        UpdateService.TryParseVersion("2.1", out Version? b) && b == new Version(2, 1) &&
+        UpdateService.TryParseVersion("v3.0.0-beta.2", out Version? c) && c == new Version(3, 0, 0) &&
+        !UpdateService.TryParseVersion("", out _);
+    Check(tags, "release tag variants parsed");
+
+    bool repositories =
+        UpdateService.TryParseRepository("smic/ProjectorWarp", out string r1) && r1 == "smic/ProjectorWarp" &&
+        UpdateService.TryParseRepository("https://github.com/smic/ProjectorWarp.git", out string r2) &&
+        r2 == "smic/ProjectorWarp" &&
+        !UpdateService.TryParseRepository("ProjectorWarp", out _) &&
+        !UpdateService.TryParseRepository("", out _);
+    Check(repositories, "repository text normalized");
+
+    // 배포처는 빌드에 고정되어 있다. 오타가 나면 업데이트가 조용히 죽으므로 형식을 검사한다.
+    Check(UpdateService.TryParseRepository(UpdateService.Repository, out string configured) &&
+        configured == UpdateService.Repository,
+        $"built-in update repository is well formed ({UpdateService.Repository})");
+
+    Check(release?.AssetApiUrl == "https://api.github.com/repos/o/r/releases/assets/2",
+        $"release asset api url read ({release?.AssetApiUrl})");
 }
 
 graphics?.Dispose();

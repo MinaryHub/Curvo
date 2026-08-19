@@ -27,6 +27,7 @@
     <Compile Include="..\..\src\Capture\*.cs" />
     <Compile Include="..\..\src\Presets\*.cs" />
     <Compile Include="..\..\src\Media\*.cs" />
+    <Compile Include="..\..\src\Update\*.cs" />
     <Compile Include="..\..\src\Rendering\GraphicsDevice.cs" />
     <Compile Include="..\..\src\Rendering\MeshBuilder.cs" />
     <Compile Include="..\..\src\Rendering\OutputWindow.cs" />

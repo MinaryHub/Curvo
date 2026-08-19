@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using ProjectorWarp.Update;
 
 namespace ProjectorWarp.UI;
 
@@ -14,6 +15,19 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
 
         base.OnStartup(e);
+
+        // 업데이트 교체 모드로 실행되었으면 창을 띄우지 않고 교체만 하고 끝낸다.
+        if (UpdateService.TryApplyPendingUpdate(e.Args, out string? updateError))
+        {
+            if (updateError is not null)
+            {
+                MessageBox.Show(updateError, AppConfig.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            Shutdown(updateError is null ? 0 : 1);
+            return;
+        }
+
+        UpdateService.CleanStagingDirectory();
 
         MainWindow = new MainWindow();
         MainWindow.Show();
