@@ -277,7 +277,7 @@ gh release create v1.1.1 --repo MinaryHub/ProjectorWarp publish\ProjectorWarp.ex
 소스 저장소를 비공개로 두면서 자동 업데이트를 설정 없이 쓰려면, 실행 파일만 공개 저장소에 올리는 편이 낫습니다.
 
 ```
-knoxxr/Curvo             (private)  소스
+MinaryHub/Curvo          (private)  소스
 MinaryHub/ProjectorWarp  (public)   릴리스 · 실행 파일  ← 앱이 확인하는 곳
 ```
 
