@@ -365,14 +365,17 @@
 
             <TextBlock x:Name="UpdateSourceText" Text="Update source —" Style="{StaticResource Hint}" Margin="0,3,0,0"
                        ToolTip="The release repository is fixed at build time (AppConfig.UpdateRepository)." />
-            <CheckBox x:Name="CheckUpdateOnStartupCheck" Content="Check for a new version at start-up" Margin="0,8,0,0"
-                      Checked="OnUpdateOptionChanged" Unchecked="OnUpdateOptionChanged" />
+            <!-- MSIX 패키지에서는 스토어가 갱신하므로 이 묶음을 통째로 감춘다 -->
+            <StackPanel x:Name="UpdateControls">
+              <CheckBox x:Name="CheckUpdateOnStartupCheck" Content="Check for a new version at start-up" Margin="0,8,0,0"
+                        Checked="OnUpdateOptionChanged" Unchecked="OnUpdateOptionChanged" />
 
-            <WrapPanel Margin="0,6,0,0">
-              <Button x:Name="CheckUpdateButton" Content="Check for updates" Click="OnCheckUpdateClick" />
-              <Button x:Name="ApplyUpdateButton" Content="Install and restart" Click="OnApplyUpdateClick"
-                      Visibility="Collapsed" />
-            </WrapPanel>
+              <WrapPanel Margin="0,6,0,0">
+                <Button x:Name="CheckUpdateButton" Content="Check for updates" Click="OnCheckUpdateClick" />
+                <Button x:Name="ApplyUpdateButton" Content="Install and restart" Click="OnApplyUpdateClick"
+                        Visibility="Collapsed" />
+              </WrapPanel>
+            </StackPanel>
             <TextBlock x:Name="UpdateStatusText" Style="{StaticResource Hint}" Margin="0,4,0,0" Text="" />
             <ProgressBar x:Name="UpdateProgress" Height="5" Margin="0,4,0,0" Maximum="1"
                          Visibility="Collapsed" />

@@ -81,6 +81,11 @@ internal static class AppConfig
     // ---- 자동 시작 --------------------------------------------------------
     /// <summary>로그온 자동 실행 시 붙는 명령줄 인자.</summary>
     public const string AutoStartArgument = "--autostart";
+    /// <summary>
+    /// MSIX 패키지의 로그온 자동 실행 작업 아이디.
+    /// <b>Package.appxmanifest 의 uap5:StartupTask/@TaskId 와 반드시 같아야 한다.</b>
+    /// </summary>
+    public const string StartupTaskId = "CurvoStartup";
     /// <summary>자동 시작에서 캡처 대상을 찾기 위해 재시도하는 기본 최대 시간(초).</summary>
     public const int DefaultAutoStartRetrySeconds = 60;
     /// <summary>자동 시작 재시도 간격(초).</summary>

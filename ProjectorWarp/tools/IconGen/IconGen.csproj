@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    assets\Curvo.ico 생성기. 아이콘을 손으로 만든 바이너리로 두지 않고
+    assets\Curvo.ico 와 MSIX 타일 자산 생성기. 아이콘을 손으로 만든 바이너리로 두지 않고
     코드로 재현할 수 있게 남겨 둔다. 앱 빌드에는 포함되지 않는다.
-      dotnet run --project tools\IconGen -- ..\..\assets\Curvo.ico
+    실행 방법은 README 의 "아이콘" 항목 참고.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>

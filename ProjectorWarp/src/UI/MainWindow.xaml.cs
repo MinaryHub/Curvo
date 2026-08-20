@@ -137,7 +137,16 @@ public partial class MainWindow : Window
         UpdatePreviewVisibility();
         if (_appSettings.StartMinimized) WindowState = WindowState.Minimized;
         if (_appSettings.AutoStartProjection) BeginAutoStart();
-        if (_appSettings.CheckForUpdatesOnStartup) _ = CheckForUpdatesAsync(quiet: true);
+        if (PackageContext.IsPackaged)
+        {
+            // 패키지 설치 폴더는 읽기 전용이라 자기 자신을 교체할 수 없다. 갱신은 스토어가 한다.
+            UpdateControls.Visibility = Visibility.Collapsed;
+            UpdateStatusText.Text = "Updates are delivered through the Microsoft Store.";
+        }
+        else if (_appSettings.CheckForUpdatesOnStartup)
+        {
+            _ = CheckForUpdatesAsync(quiet: true);
+        }
     }
 
     // ---- 목록 -------------------------------------------------------------

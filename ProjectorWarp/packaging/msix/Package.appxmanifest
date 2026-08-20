@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Microsoft Store / 사이드로드용 MSIX 매니페스트.
+
+  전체 신뢰 Win32 데스크톱 앱으로 패키징한다(EntryPoint=Windows.FullTrustApplication):
+  Windows.Graphics.Capture, Direct3D 11, Media Foundation, 창 열거가 단일 exe 빌드와
+  똑같이 동작한다. 패키지에서만 달라지는 동작은 PackageContext 뒤에 있다 —
+  자체 업데이트를 끄고(설치 폴더가 읽기 전용이다), 로그온 자동 실행은 아래 startupTask 를 쓴다.
+
+  Identity 는 Partner Center ▸ Curvo ▸ 제품 ID 의 값이다.
+    Name      minary.Curvo  — 제품마다 예약되는 값. 다른 제품(DeskCue)의 값을 넣으면 반려된다.
+    Publisher CN=...        — 계정 전체 공통 GUID.
+  스토어가 수집할 때 다시 서명하므로 제출에는 코드 서명 인증서가 필요하지 않다.
+  Identity/@Version 은 4자리이고 마지막 자리는 0 이어야 한다(빌드 스크립트가 채운다).
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap5 rescap">
+
+  <Identity
+    Name="minary.Curvo"
+    Publisher="CN=C460CD23-2642-4BA2-A332-6F8ADBE54E1F"
+    Version="1.0.0.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Curvo</DisplayName>
+    <PublisherDisplayName>minary</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <!-- Windows.Graphics.Capture 는 1903(18362) 부터지만, 노란 캡처 테두리 제거와
+         WDA_EXCLUDEFROMCAPTURE 를 감안해 2004(19041) 를 최소로 둔다. -->
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <!-- UI 는 영어 하나뿐이고 패키지에 지역화 리소스가 없으므로 en-us 만 선언한다. -->
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="Curvo"
+                 Executable="Curvo.exe"
+                 EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Curvo"
+        Description="Warps projected video in real time so straight lines stay straight on curved walls, pillars and arches."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\Square71x71Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="transparent" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- 로그온 자동 실행. 꺼진 상태로 배포하고 앱이 StartupTask API 로 켜기를 요청한다.
+             TaskId 는 AppConfig.StartupTaskId 와 같아야 한다. -->
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask
+            TaskId="CurvoStartup"
+            Enabled="false"
+            DisplayName="Curvo" />
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- 전체 신뢰 Win32 앱: 화면 캡처, Direct3D 11 출력 창, 창 열거, 파일 열기에 필요하다.
+         데스크톱 브리지 패키지의 표준 기능이며 스토어 제출 시 승인 대상이다. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

@@ -10,8 +10,41 @@ internal static class Program
 {
     private static readonly int[] Sizes = { 16, 20, 24, 32, 48, 64, 128, 256 };
 
+    /// <summary>
+    /// MSIX 타일 자산. (파일 이름, 너비, 높이) — 아이콘은 정사각형 기준으로 그리고
+    /// 와이드 타일은 캔버스 가운데에 배치한다.
+    /// </summary>
+    private static readonly (string Name, int Width, int Height)[] MsixAssets =
+    {
+        ("StoreLogo.png", 50, 50),
+        ("Square44x44Logo.png", 44, 44),
+        ("Square71x71Logo.png", 71, 71),
+        ("Square150x150Logo.png", 150, 150),
+        ("Square310x310Logo.png", 310, 310),
+        ("Wide310x150Logo.png", 310, 150),
+        ("SplashScreen.png", 620, 300),
+        ("Square44x44Logo.targetsize-16_altform-unplated.png", 16, 16),
+        ("Square44x44Logo.targetsize-24_altform-unplated.png", 24, 24),
+        ("Square44x44Logo.targetsize-44_altform-unplated.png", 44, 44),
+        ("Square44x44Logo.targetsize-256_altform-unplated.png", 256, 256),
+    };
+
     private static int Main(string[] args)
     {
+        // --msix <출력폴더> : MSIX 타일 자산만 생성한다.
+        if (args.Length >= 1 && args[0] == "--msix")
+        {
+            string assetDirectory = args.Length > 1 ? args[1] : Path.Combine("packaging", "msix", "Assets");
+            Directory.CreateDirectory(assetDirectory);
+            foreach ((string name, int width, int height) in MsixAssets)
+            {
+                using Bitmap tile = DrawTile(width, height);
+                tile.Save(Path.Combine(assetDirectory, name), ImageFormat.Png);
+            }
+            Console.WriteLine($"{assetDirectory}  ({MsixAssets.Length} assets)");
+            return 0;
+        }
+
         // 기본값은 저장소 안의 상대 경로다. 절대 경로를 박아 두면 폴더를 옮길 때 함께 깨진다.
         string outPath = args.Length > 0
             ? args[0]
@@ -43,6 +76,25 @@ internal static class Program
         Console.WriteLine($"{outPath}  ({new FileInfo(outPath).Length:N0} bytes, {entries.Count} sizes, " +
                           $"DIB {entries.Count(e => !e.Png)} + PNG {entries.Count(e => e.Png)})");
         return 0;
+    }
+
+    /// <summary>
+    /// 타일 하나를 그린다. 정사각형이면 아이콘을 그대로, 와이드/스플래시면
+    /// 짧은 변에 맞춘 아이콘을 투명 캔버스 가운데에 놓는다(스토어가 요구하는 크기를 맞추기 위해).
+    /// </summary>
+    private static Bitmap DrawTile(int width, int height)
+    {
+        if (width == height) return Draw(width);
+
+        int side = (int)(Math.Min(width, height) * 0.86);
+        var canvas = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+        using (Graphics g = Graphics.FromImage(canvas))
+        using (Bitmap icon = Draw(side))
+        {
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.DrawImage(icon, (width - side) / 2, (height - side) / 2, side, side);
+        }
+        return canvas;
     }
 
     private static Bitmap Draw(int size)

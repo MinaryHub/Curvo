@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using Windows.ApplicationModel;
 
 namespace Curvo.Interop;
 
@@ -23,6 +24,9 @@ internal static class AutoStartRegistry
 
     public static bool IsEnabled()
     {
+        // 패키지에서는 Run 키가 아니라 매니페스트의 startupTask 가 자동 실행을 관리한다.
+        if (PackageContext.IsPackaged) return PackagedIsEnabled();
+
         try
         {
             using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
@@ -37,6 +41,8 @@ internal static class AutoStartRegistry
     public static bool TryEnable(out string? error)
     {
         error = null;
+        if (PackageContext.IsPackaged) return PackagedSetEnabled(true, out error);
+
         string? command = BuildCommand();
         if (command is null)
         {
@@ -61,6 +67,8 @@ internal static class AutoStartRegistry
     public static bool TryDisable(out string? error)
     {
         error = null;
+        if (PackageContext.IsPackaged) return PackagedSetEnabled(false, out error);
+
         try
         {
             using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
@@ -79,6 +87,9 @@ internal static class AutoStartRegistry
     /// </summary>
     public static void SyncPathIfEnabled()
     {
+        // 패키지는 경로가 고정이고 Run 키를 쓰지 않으므로 맞출 것이 없다.
+        if (PackageContext.IsPackaged) return;
+
         MigrateLegacyValue();
         if (!IsEnabled()) return;
 
@@ -123,4 +134,47 @@ internal static class AutoStartRegistry
     public static bool LaunchedByLogon() => Environment.GetCommandLineArgs()
         .Skip(1)
         .Any(argument => argument.Equals(AppConfig.AutoStartArgument, StringComparison.OrdinalIgnoreCase));
+
+    // ---- MSIX StartupTask 경로 --------------------------------------------
+    // WinRT 호출이 비동기인데 호출자는 UI 스레드의 동기 핸들러다. STA 메시지 루프에서 대기하면
+    // 교착될 수 있으므로 스레드 풀에서 돌리고 짧게 기다린다.
+
+    private static bool PackagedIsEnabled()
+    {
+        try
+        {
+            StartupTask task = Task.Run(async () => await StartupTask.GetAsync(AppConfig.StartupTaskId))
+                .GetAwaiter().GetResult();
+            return task.State is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool PackagedSetEnabled(bool enable, out string? error)
+    {
+        error = null;
+        try
+        {
+            return Task.Run(async () =>
+            {
+                StartupTask task = await StartupTask.GetAsync(AppConfig.StartupTaskId);
+                if (!enable)
+                {
+                    task.Disable();
+                    return true;
+                }
+
+                StartupTaskState state = await task.RequestEnableAsync();
+                return state is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy;
+            }).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
 }
