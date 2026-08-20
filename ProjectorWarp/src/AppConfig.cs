@@ -1,13 +1,15 @@
-namespace ProjectorWarp;
+namespace Curvo;
 
 /// <summary>
 /// 앱 전역 기본값과 한계값. 매직넘버는 모두 이곳에 모은다.
 /// </summary>
 internal static class AppConfig
 {
-    public const string AppName = "ProjectorWarp";
-    public const string OutputWindowClassName = "ProjectorWarpOutputWindow";
-    public const string OutputWindowTitle = "ProjectorWarp Output";
+    public const string AppName = "Curvo";
+    /// <summary>1.2.x 까지 쓰던 이름. 설정 폴더와 자동 실행 항목을 이전하는 데만 쓴다.</summary>
+    public const string LegacyAppName = "ProjectorWarp";
+    public const string OutputWindowClassName = "CurvoOutputWindow";
+    public const string OutputWindowTitle = "Curvo Output";
 
     // ---- 베지어 제어점 격자 ----------------------------------------------
     public const int MinGridSize = 3;
@@ -120,10 +122,10 @@ internal static class AppConfig
     /// 비공개 저장소일 때만 필요한 읽기 전용 토큰을 담는 환경 변수 이름.
     /// 실행파일에 토큰을 박아 배포하면 그대로 유출되므로 반드시 환경에서 읽는다.
     /// </summary>
-    public const string UpdateTokenEnvironmentVariable = "PROJECTORWARP_GITHUB_TOKEN";
+    public const string UpdateTokenEnvironmentVariable = "CURVO_GITHUB_TOKEN";
     /// <summary>릴리스에서 내려받을 자산 이름(없으면 첫 번째 exe 를 쓴다).</summary>
-    public const string UpdateAssetName = "ProjectorWarp.exe";
-    /// <summary>내려받은 exe 를 두는 폴더 이름(%LocalAppData%\ProjectorWarp 하위).</summary>
+    public const string UpdateAssetName = "Curvo.exe";
+    /// <summary>내려받은 exe 를 두는 폴더 이름(%LocalAppData%\Curvo 하위).</summary>
     public const string UpdateStagingFolderName = "Update";
     public const string UpdatePartialSuffix = ".part";
     public const string UpdateBackupSuffix = ".bak";
@@ -156,4 +158,46 @@ internal static class AppConfig
     /// <summary>프리셋/세션 상태를 저장하는 사용자 폴더.</summary>
     public static string UserDataDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
+
+    /// <summary>이름을 바꾸기 전에 쓰던 사용자 폴더.</summary>
+    private static string LegacyUserDataDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), LegacyAppName);
+
+    /// <summary>
+    /// 앱 이름이 ProjectorWarp 에서 Curvo 로 바뀌면서 사용자 폴더 위치도 함께 바뀌었다.
+    /// 예전 폴더의 내용을 새 폴더로 옮겨 보정값·프리셋·자동 시작 설정을 살린다.
+    /// <para>
+    /// "새 폴더가 없을 때만" 으로 판단하면 안 된다. 설정을 한 번이라도 저장하면 폴더가 비어 있어도
+    /// 먼저 만들어지므로, <b>설정 파일이 있는지</b>를 기준으로 이미 옮겼는지 판단한다.
+    /// </para>
+    /// 실패해도 앱 실행을 막지 않는다(기본값으로 시작할 뿐이다).
+    /// </summary>
+    public static void MigrateLegacyUserData()
+    {
+        try
+        {
+            if (!Directory.Exists(LegacyUserDataDirectory)) return;
+            if (File.Exists(Path.Combine(UserDataDirectory, AppSettingsFileName)) ||
+                File.Exists(Path.Combine(UserDataDirectory, LastSessionFileName)))
+                return;   // 이미 옮겼거나 새로 만든 설정이 있다.
+
+            Directory.CreateDirectory(UserDataDirectory);
+
+            foreach (string file in Directory.GetFiles(LegacyUserDataDirectory))
+            {
+                string target = Path.Combine(UserDataDirectory, Path.GetFileName(file));
+                if (!File.Exists(target)) File.Move(file, target);
+            }
+
+            foreach (string directory in Directory.GetDirectories(LegacyUserDataDirectory))
+            {
+                string target = Path.Combine(UserDataDirectory, Path.GetFileName(directory));
+                if (!Directory.Exists(target)) Directory.Move(directory, target);
+            }
+        }
+        catch (Exception)
+        {
+            // 옮기지 못하면 새 폴더에 기본값으로 시작한다.
+        }
+    }
 }

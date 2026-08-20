@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace ProjectorWarp.Geometry;
+namespace Curvo.Geometry;
 
 /// <summary>
 /// 정규화 좌표(0~1)로 표현된 베지어 제어점 격자.

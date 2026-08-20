@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace ProjectorWarp.Geometry;
+namespace Curvo.Geometry;
 
 /// <summary>
 /// 텐서곱 베지어 곡면 계산.

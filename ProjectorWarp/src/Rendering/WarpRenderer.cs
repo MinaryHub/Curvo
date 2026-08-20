@@ -5,9 +5,9 @@ using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Vortice.Mathematics;
 using Windows.Graphics;
-using ProjectorWarp.Geometry;
+using Curvo.Geometry;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 /// <summary>워핑 셰이더 상수 버퍼 레이아웃(warp.hlsl 의 WarpConstants 와 일치해야 한다).</summary>
 [StructLayout(LayoutKind.Sequential)]

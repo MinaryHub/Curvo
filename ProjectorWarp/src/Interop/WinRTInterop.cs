@@ -4,7 +4,7 @@ using Windows.Graphics.DirectX.Direct3D11;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 
-namespace ProjectorWarp.Interop;
+namespace Curvo.Interop;
 
 /// <summary>
 /// WinRT(Windows.Graphics.Capture)와 D3D11 사이의 COM 상호 운용.

@@ -1,9 +1,9 @@
 using System.Text.Json;
 
-namespace ProjectorWarp.Presets;
+namespace Curvo.Presets;
 
 /// <summary>
-/// 워핑 프리셋과 별개인 앱 동작 설정. `%AppData%\ProjectorWarp\app-settings.json` 에 저장한다.
+/// 워핑 프리셋과 별개인 앱 동작 설정. `%AppData%\Curvo\app-settings.json` 에 저장한다.
 /// </summary>
 internal sealed class AppSettings
 {

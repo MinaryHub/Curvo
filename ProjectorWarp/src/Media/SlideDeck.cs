@@ -4,9 +4,9 @@ using Vortice.DXGI;
 using Windows.Graphics;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
-using ProjectorWarp.Rendering;
+using Curvo.Rendering;
 
-namespace ProjectorWarp.Media;
+namespace Curvo.Media;
 
 /// <summary>
 /// 슬라이드 이미지 묶음. 현재 슬라이드를 D3D11 텍스처로 올려 워핑 파이프라인에 넣는다.

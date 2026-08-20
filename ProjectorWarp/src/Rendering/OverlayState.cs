@@ -1,6 +1,6 @@
-using ProjectorWarp.Geometry;
+using Curvo.Geometry;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 /// <summary>편집 오버레이 표시 상태(프리셋에는 저장하지 않는 화면 전용 상태).</summary>
 internal sealed class OverlayState

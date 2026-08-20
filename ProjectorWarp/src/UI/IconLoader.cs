@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using ProjectorWarp.Interop;
+using Curvo.Interop;
 
-namespace ProjectorWarp.UI;
+namespace Curvo.UI;
 
 /// <summary>실행 파일 경로에서 작은 아이콘을 읽어 WPF 이미지 소스로 변환한다.</summary>
 internal static class IconLoader

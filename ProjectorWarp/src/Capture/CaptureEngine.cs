@@ -4,9 +4,9 @@ using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
 using Vortice.Direct3D11;
-using ProjectorWarp.Interop;
+using Curvo.Interop;
 
-namespace ProjectorWarp.Capture;
+namespace Curvo.Capture;
 
 /// <summary>
 /// Windows.Graphics.Capture 래퍼. 캡처 텍스처는 GPU 에 상주한 채로 전달된다.

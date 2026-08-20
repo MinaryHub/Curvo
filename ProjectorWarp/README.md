@@ -1,4 +1,4 @@
-# ProjectorWarp
+# Curvo
 
 굴곡진 벽면·기둥·아치 구조물에 프로젝터를 투사할 때, 원본 화면을 실시간으로 **역왜곡(warping)** 시켜
 실제 벽면에서 직선이 직선으로 보이도록 맞추는 Windows 데스크톱 유틸리티입니다.
@@ -52,7 +52,7 @@ dotnet run
 dotnet publish -c Release -o publish
 ```
 
-`ProjectorWarp.csproj` 에 `PublishSingleFile` / `SelfContained` / `win-x64` 가 이미 지정되어 있습니다.
+`Curvo.csproj` 에 `PublishSingleFile` / `SelfContained` / `win-x64` 가 이미 지정되어 있습니다.
 
 ### 검증 스크립트
 
@@ -60,10 +60,10 @@ dotnet publish -c Release -o publish
 
 ```powershell
 # 기본 검증
-dotnet run --project tests\ProjectorWarp.Checks
+dotnet run --project tests\Curvo.Checks
 
 # 내장 재생까지 검증 (샘플 동영상 파일과, slide-*.png / *.pdf / *.pptx 가 든 폴더를 넘긴다)
-dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
+dotnet run --project tests\Curvo.Checks -- "D:\sample.mp4" "D:\slides"
 ```
 
 확인 항목:
@@ -134,7 +134,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 | PDF | **Windows 내장 PDF 렌더러**로 페이지별 이미지 생성. 외부 프로그램이 전혀 필요 없습니다. |
 | PPTX · PPT · PPSX | **가져올 때 한 번** PowerPoint 로 PNG 내보내기를 수행합니다. 이후 재생은 PowerPoint 없이 이뤄집니다. |
 
-변환 결과는 `%AppData%\ProjectorWarp\SlideCache\` 에 캐시되어, 같은 파일을 다시 열면 즉시 로드됩니다
+변환 결과는 `%AppData%\Curvo\SlideCache\` 에 캐시되어, 같은 파일을 다시 열면 즉시 로드됩니다
 (파일이 수정되면 자동으로 다시 변환합니다).
 
 > **PowerPoint 가 없는 PC** 에서는 PPT 를 변환할 수 없습니다. 발표 자료가 있는 PC 에서
@@ -175,7 +175,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ## 프리셋
 
-`%AppData%\ProjectorWarp\` 에 JSON 으로 저장합니다. 종료 시 `last-session.json` 이 자동 저장됩니다.
+`%AppData%\Curvo\` 에 JSON 으로 저장합니다. 종료 시 `last-session.json` 이 자동 저장됩니다.
 
 ```json
 {
@@ -204,8 +204,8 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 | 파일 | 내용 | 저장 시점 |
 |---|---|---|
-| `%AppData%\ProjectorWarp\last-session.json` | 보정값 · 캡처 소스 · 출력 모니터 | 앱 종료 시 자동, [Save current setup] 클릭 시 |
-| `%AppData%\ProjectorWarp\app-settings.json` | 자동 시작 옵션, 항상 위 여부(기본 꺼짐), 시작 프리셋 경로 | 옵션을 바꿀 때마다 즉시 |
+| `%AppData%\Curvo\last-session.json` | 보정값 · 캡처 소스 · 출력 모니터 | 앱 종료 시 자동, [Save current setup] 클릭 시 |
+| `%AppData%\Curvo\app-settings.json` | 자동 시작 옵션, 항상 위 여부(기본 꺼짐), 시작 프리셋 경로 | 옵션을 바꿀 때마다 즉시 |
 | 임의 위치 `*.json` | 프리셋 (Ctrl+S 로 다른 이름으로 저장) | 수동 |
 
 **[Save current setup]** 은 보정값을 *시작 시 사용할 프리셋* 으로 지정된 파일에 씁니다.
@@ -228,14 +228,14 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 4. 도중에 사용자가 직접 [Start output]/[Stop output] 를 누르거나 [Cancel auto-start] 를 누르면 재시도를 멈춥니다.
 
 > 자동 실행 경로는 앱을 다른 폴더로 옮기면 다음 실행 때 자동으로 갱신됩니다.
-> 단일 실행파일(`publish\ProjectorWarp.exe`)을 고정 위치에 두고 등록하는 것을 권장합니다.
+> 단일 실행파일(`publish\Curvo.exe`)을 고정 위치에 두고 등록하는 것을 권장합니다.
 
 ---
 
 ## 버전 · 자동 업데이트
 
 컨트롤 패널 제목과 **[9. Version · updates]** 에 현재 버전이 표시됩니다.
-버전 값은 `ProjectorWarp.csproj` 의 `<Version>` 이고, **GitHub 릴리스 태그와 이 값을 맞춰야** 새 버전으로 인식됩니다.
+버전 값은 `Curvo.csproj` 의 `<Version>` 이고, **GitHub 릴리스 태그와 이 값을 맞춰야** 새 버전으로 인식됩니다.
 
 ### 사용하는 쪽
 
@@ -249,20 +249,20 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 ### 배포하는 쪽
 
 ```powershell
-# 1. 버전을 올린다 (ProjectorWarp.csproj)
+# 1. 버전을 올린다 (Curvo.csproj)
 #    <Version>1.2.1</Version>
 
 # 2. 단일 실행파일을 만든다
 dotnet publish -c Release -o publish
 
 # 3. 릴리스를 만들고 실행 파일을 자산으로 올린다
-gh release create v1.2.1 --repo MinaryHub/Curvo publish\ProjectorWarp.exe
+gh release create v1.2.1 --repo MinaryHub/Curvo publish\Curvo.exe
 ```
 
 | 항목 | 규칙 |
 |---|---|
 | 릴리스 태그 | `v1.0.1` 또는 `1.0.1` (`-beta` 같은 접미사는 무시하고 숫자만 비교) |
-| 자산 이름 | `ProjectorWarp.exe` (없으면 릴리스의 첫 번째 `.exe`) |
+| 자산 이름 | `Curvo.exe` (없으면 릴리스의 첫 번째 `.exe`) |
 | 조회 주소 | `https://api.github.com/repos/{owner}/{repo}/releases/latest` |
 | 배포 저장소 | `MinaryHub/Curvo` (공개) — 소스와 릴리스를 함께 둡니다 |
 | 배포처 변경 | `src/AppConfig.cs` 의 `UpdateRepository` 상수 한 줄 |
@@ -281,7 +281,7 @@ MinaryHub/Curvo  (public)  소스 + 릴리스 · 실행 파일  ← 앱이 확�
 
 ```powershell
 # 배포 시 한 번 (사용자가 앱에서 입력할 값이 아니다)
-setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
+setx CURVO_GITHUB_TOKEN "github_pat_..."
 ```
 
 토큰이 있으면 자산도 `browser_download_url` 대신 릴리스 자산 API 로 내려받습니다(비공개 저장소는 전자로 받을 수 없음).
@@ -292,7 +292,7 @@ setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
 교체 방식 — 단일 실행파일은 실행 중 자기 자신을 덮어쓸 수 없으므로 **새 exe 가 교체를 수행합니다.**
 
 ```
-새 exe 를 %LocalAppData%\ProjectorWarp\Update\ 로 내려받기
+새 exe 를 %LocalAppData%\Curvo\Update\ 로 내려받기
   → 새 exe 를 `--apply-update <대상 exe> <이전 PID>` 로 실행
   → 앱이 마지막 상태를 저장하며 종료
   → 새 프로세스가 이전 PID 종료를 기다린 뒤 자신을 대상 경로로 복사(실패하면 .bak 복원)
@@ -343,14 +343,14 @@ setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
 
 ## 아이콘
 
-앱과 창 아이콘은 `assets/ProjectorWarp.ico` 입니다. 굽은 벽면에 투사된 화면(휘어진 격자 사각형)과
+앱과 창 아이콘은 `assets/Curvo.ico` 입니다. 굽은 벽면에 투사된 화면(휘어진 격자 사각형)과
 프로젝터 광선을 그린 것으로, 16 / 20 / 24 / 32 / 48 / 64 / 128 / 256 px 를 담고 있습니다.
 작은 크기에서는 프로젝터와 격자를 빼고 화면 실루엣만 크게 그려 뭉개지지 않게 했습니다.
 
 손으로 만든 바이너리로 남기지 않도록 생성기를 함께 둡니다.
 
 ```powershell
-dotnet run --project tools\IconGen -- assets\ProjectorWarp.ico
+dotnet run --project tools\IconGen -- assets\Curvo.ico
 ```
 
 > 256px 항목만 PNG 이고 나머지는 DIB 입니다. `System.Drawing.Icon`(GDI+)이 PNG 항목을 읽지 못해
@@ -400,7 +400,7 @@ dotnet run --project tools\IconGen -- assets\ProjectorWarp.ico
 ## 프로젝트 구조
 
 ```
-ProjectorWarp/
+Curvo/
 ├─ src/
 │  ├─ AppConfig.cs        # 기본값 · 한계값 상수
 │  ├─ Capture/            # WGC 래퍼, 창/모니터 열거
@@ -412,8 +412,8 @@ ProjectorWarp/
 │  ├─ Presets/            # 프리셋 · 앱 설정 JSON 직렬화
 │  ├─ Interop/            # Win32 / WinRT P/Invoke, 로그온 자동 실행 레지스트리
 │  └─ Update/             # GitHub Releases 확인 · 다운로드 · 실행파일 교체
-├─ assets/ProjectorWarp.ico      # 앱 · 창 아이콘
+├─ assets/Curvo.ico      # 앱 · 창 아이콘
 ├─ tools/IconGen/               # 아이콘 생성기(앱 빌드에 포함되지 않음)
-├─ tests/ProjectorWarp.Checks/   # 셰이더 컴파일 · 기하 계산 검증
+├─ tests/Curvo.Checks/   # 셰이더 컴파일 · 기하 계산 검증
 └─ docs/
 ```

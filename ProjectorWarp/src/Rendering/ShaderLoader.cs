@@ -3,7 +3,7 @@ using SharpGen.Runtime;
 using Vortice.D3DCompiler;
 using Vortice.Direct3D;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 /// <summary>
 /// 별도 .hlsl 파일로 관리되는 셰이더를 임베디드 리소스에서 읽어 컴파일한다.
@@ -12,7 +12,7 @@ namespace ProjectorWarp.Rendering;
 /// </summary>
 internal static class ShaderLoader
 {
-    private const string ResourcePrefix = "ProjectorWarp.src.Rendering.Shaders.";
+    private const string ResourcePrefix = "Curvo.src.Rendering.Shaders.";
     private const string VertexShaderProfile = "vs_5_0";
     private const string PixelShaderProfile = "ps_5_0";
 

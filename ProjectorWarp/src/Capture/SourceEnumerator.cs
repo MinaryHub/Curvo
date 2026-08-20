@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using ProjectorWarp.Interop;
+using Curvo.Interop;
 
-namespace ProjectorWarp.Capture;
+namespace Curvo.Capture;
 
 /// <summary>캡처 가능한 최상위 창과 연결된 모니터를 열거한다.</summary>
 internal static class SourceEnumerator

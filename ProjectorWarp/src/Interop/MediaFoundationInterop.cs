@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ProjectorWarp.Interop;
+namespace Curvo.Interop;
 
 /// <summary>
 /// Media Foundation Media Engine 상호 운용.

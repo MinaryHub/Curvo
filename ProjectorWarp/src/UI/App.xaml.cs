@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Threading;
-using ProjectorWarp.Update;
+using Curvo.Update;
 
-namespace ProjectorWarp.UI;
+namespace Curvo.UI;
 
 public partial class App : Application
 {
@@ -28,6 +28,8 @@ public partial class App : Application
         }
 
         UpdateService.CleanStagingDirectory();
+        // 설정을 읽기 전에 옮겨야 예전 보정값이 그대로 복원된다.
+        AppConfig.MigrateLegacyUserData();
 
         MainWindow = new MainWindow();
         MainWindow.Show();

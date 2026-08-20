@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace ProjectorWarp.Geometry;
+namespace Curvo.Geometry;
 
 /// <summary>출력 화면에 겹쳐 그리는 테스트 패턴 종류.</summary>
 internal enum TestPattern

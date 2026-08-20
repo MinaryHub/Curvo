@@ -1,9 +1,9 @@
 using System.Numerics;
-using ProjectorWarp.Geometry;
-using ProjectorWarp.Interop;
-using ProjectorWarp.Rendering;
+using Curvo.Geometry;
+using Curvo.Interop;
+using Curvo.Rendering;
 
-namespace ProjectorWarp.UI;
+namespace Curvo.UI;
 
 /// <summary>
 /// 출력 창 위에서 이뤄지는 편집 조작(제어점 드래그, 단축키)을 처리한다.

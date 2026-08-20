@@ -1,8 +1,8 @@
 using System.Windows.Media.Imaging;
-using ProjectorWarp.Capture;
-using ProjectorWarp.Geometry;
+using Curvo.Capture;
+using Curvo.Geometry;
 
-namespace ProjectorWarp.UI;
+namespace Curvo.UI;
 
 /// <summary>창 목록 항목(제목 / 프로세스명 / 아이콘).</summary>
 internal sealed class WindowListItem

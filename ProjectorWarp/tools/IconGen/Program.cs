@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-// ProjectorWarp 전용 아이콘 생성기.
+// Curvo 전용 아이콘 생성기.
 // 굽은 벽면에 투사된 화면(휘어진 격자 사각형) + 프로젝터 광선을 여러 해상도로 그려
 // 하나의 .ico 로 묶는다. 작은 크기는 DIB, 256px 만 PNG 로 넣는다
 // (GDI+ 의 System.Drawing.Icon 은 PNG 항목을 읽지 못한다).
@@ -12,9 +12,10 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // 기본값은 저장소 안의 상대 경로다. 절대 경로를 박아 두면 폴더를 옮길 때 함께 깨진다.
         string outPath = args.Length > 0
             ? args[0]
-            : @"C:\Users\SMIC\Curvo\ProjectorWarp\assets\ProjectorWarp.ico";
+            : Path.Combine("assets", "Curvo.ico");
         string? previewDirectory = args.Length > 1 ? args[1] : null;
 
         var entries = new List<(int Size, byte[] Bytes, bool Png)>();

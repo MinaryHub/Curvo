@@ -1,14 +1,14 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Windows.Threading;
-using ProjectorWarp;
-using ProjectorWarp.Capture;
-using ProjectorWarp.Geometry;
-using ProjectorWarp.Interop;
-using ProjectorWarp.Media;
-using ProjectorWarp.Presets;
-using ProjectorWarp.Rendering;
-using ProjectorWarp.Update;
+using Curvo;
+using Curvo.Capture;
+using Curvo.Geometry;
+using Curvo.Interop;
+using Curvo.Media;
+using Curvo.Presets;
+using Curvo.Rendering;
+using Curvo.Update;
 using Vortice.Direct3D11;
 using Windows.Graphics;
 
@@ -329,7 +329,7 @@ if (graphics is not null && monitors.Count > 0)
 
 // 16. 프리셋 파일 왕복 (설정 저장 → 불러오기)
 {
-    string path = Path.Combine(Path.GetTempPath(), "projectorwarp-check-preset.json");
+    string path = Path.Combine(Path.GetTempPath(), "curvo-check-preset.json");
     try
     {
         var settings = new WarpSettings { CornerPinEnabled = true, Tessellation = 96 };
@@ -665,8 +665,8 @@ if (graphics is not null && monitors.Count > 0 && args.FirstOrDefault(File.Exist
       "assets": [
         { "name": "notes.txt", "size": 12, "browser_download_url": "https://example.invalid/notes.txt",
           "url": "https://api.github.com/repos/o/r/releases/assets/1" },
-        { "name": "ProjectorWarp.exe", "size": 73400320,
-          "browser_download_url": "https://example.invalid/ProjectorWarp.exe",
+        { "name": "Curvo.exe", "size": 73400320,
+          "browser_download_url": "https://example.invalid/Curvo.exe",
           "url": "https://api.github.com/repos/o/r/releases/assets/2" }
       ]
     }
@@ -691,10 +691,10 @@ if (graphics is not null && monitors.Count > 0 && args.FirstOrDefault(File.Exist
     Check(tags, "release tag variants parsed");
 
     bool repositories =
-        UpdateService.TryParseRepository("smic/ProjectorWarp", out string r1) && r1 == "smic/ProjectorWarp" &&
-        UpdateService.TryParseRepository("https://github.com/smic/ProjectorWarp.git", out string r2) &&
-        r2 == "smic/ProjectorWarp" &&
-        !UpdateService.TryParseRepository("ProjectorWarp", out _) &&
+        UpdateService.TryParseRepository("smic/Curvo", out string r1) && r1 == "smic/Curvo" &&
+        UpdateService.TryParseRepository("https://github.com/smic/Curvo.git", out string r2) &&
+        r2 == "smic/Curvo" &&
+        !UpdateService.TryParseRepository("Curvo", out _) &&
         !UpdateService.TryParseRepository("", out _);
     Check(repositories, "repository text normalized");
 

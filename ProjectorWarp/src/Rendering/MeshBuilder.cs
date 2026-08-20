@@ -1,8 +1,8 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
-using ProjectorWarp.Geometry;
+using Curvo.Geometry;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 /// <summary>워핑 메시 정점. 위치는 정규화 출력 좌표, 텍스처 좌표는 투영 좌표(u*w, v*w, w).</summary>
 [StructLayout(LayoutKind.Sequential)]

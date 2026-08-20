@@ -5,20 +5,20 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
-using ProjectorWarp.Capture;
-using ProjectorWarp.Geometry;
-using ProjectorWarp.Interop;
-using ProjectorWarp.Media;
-using ProjectorWarp.Presets;
-using ProjectorWarp.Rendering;
-using ProjectorWarp.Update;
+using Curvo.Capture;
+using Curvo.Geometry;
+using Curvo.Interop;
+using Curvo.Media;
+using Curvo.Presets;
+using Curvo.Rendering;
+using Curvo.Update;
 
-namespace ProjectorWarp.UI;
+namespace Curvo.UI;
 
 /// <summary>컨트롤 패널. 소스/출력 선택과 모든 보정 파라미터를 조작한다.</summary>
 public partial class MainWindow : Window
 {
-    private const string PresetFileFilter = "ProjectorWarp preset (*.json)|*.json|All files (*.*)|*.*";
+    private const string PresetFileFilter = "Curvo preset (*.json)|*.json|All files (*.*)|*.*";
     private const byte ThumbnailOpacity = 255;
 
     private readonly ProjectionEngine _engine;

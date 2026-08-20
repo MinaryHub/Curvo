@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace ProjectorWarp.Geometry;
+namespace Curvo.Geometry;
 
 /// <summary>
 /// 단위 정사각형 (0,0)-(1,0)-(1,1)-(0,1) 을 임의의 사각형으로 보내는 3x3 호모그래피.

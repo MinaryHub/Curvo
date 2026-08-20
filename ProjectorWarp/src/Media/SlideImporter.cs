@@ -5,7 +5,7 @@ using System.Text;
 using Windows.Data.Pdf;
 using Windows.Storage;
 
-namespace ProjectorWarp.Media;
+namespace Curvo.Media;
 
 /// <summary>
 /// PPT / PDF / 이미지를 "슬라이드 이미지 목록"으로 변환한다.

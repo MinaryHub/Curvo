@@ -2,10 +2,10 @@ using System.Runtime.InteropServices;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Windows.Graphics;
-using ProjectorWarp.Interop;
-using ProjectorWarp.Rendering;
+using Curvo.Interop;
+using Curvo.Rendering;
 
-namespace ProjectorWarp.Media;
+namespace Curvo.Media;
 
 /// <summary>
 /// Media Foundation Media Engine 기반 내부 동영상 재생기.

@@ -1,6 +1,6 @@
-using ProjectorWarp.Interop;
+using Curvo.Interop;
 
-namespace ProjectorWarp.Capture;
+namespace Curvo.Capture;
 
 internal enum CaptureSourceKind
 {

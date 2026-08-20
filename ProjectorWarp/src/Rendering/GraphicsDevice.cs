@@ -3,9 +3,9 @@ using Vortice.Direct3D;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Windows.Graphics.DirectX.Direct3D11;
-using ProjectorWarp.Interop;
+using Curvo.Interop;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 /// <summary>
 /// 캡처와 렌더링이 공유하는 단일 D3D11 디바이스.

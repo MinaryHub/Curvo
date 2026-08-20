@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 
-namespace ProjectorWarp.Update;
+namespace Curvo.Update;
 
 /// <summary>GitHub 릴리스 하나의 정보(업데이트 판단과 다운로드에 필요한 것만).</summary>
 internal sealed record ReleaseInfo(

@@ -1,9 +1,9 @@
 using System.Numerics;
 using System.Text.Json.Serialization;
-using ProjectorWarp.Capture;
-using ProjectorWarp.Geometry;
+using Curvo.Capture;
+using Curvo.Geometry;
 
-namespace ProjectorWarp.Presets;
+namespace Curvo.Presets;
 
 /// <summary>프리셋 파일 스키마(JSON, camelCase).</summary>
 internal sealed class Preset

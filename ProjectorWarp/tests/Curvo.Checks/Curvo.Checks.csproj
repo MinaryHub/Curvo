@@ -12,8 +12,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>ProjectorWarp</RootNamespace>
-    <AssemblyName>ProjectorWarp.Checks</AssemblyName>
+    <RootNamespace>Curvo</RootNamespace>
+    <AssemblyName>Curvo.Checks</AssemblyName>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
@@ -43,9 +43,9 @@
     <Compile Include="..\..\src\Rendering\ShaderLoader.cs" />
     <Compile Include="..\..\src\Rendering\WarpRenderer.cs" />
     <EmbeddedResource Include="..\..\src\Rendering\Shaders\warp.hlsl"
-                      LogicalName="ProjectorWarp.src.Rendering.Shaders.warp.hlsl" />
+                      LogicalName="Curvo.src.Rendering.Shaders.warp.hlsl" />
     <EmbeddedResource Include="..\..\src\Rendering\Shaders\overlay.hlsl"
-                      LogicalName="ProjectorWarp.src.Rendering.Shaders.overlay.hlsl" />
+                      LogicalName="Curvo.src.Rendering.Shaders.overlay.hlsl" />
   </ItemGroup>
 
   <ItemGroup>

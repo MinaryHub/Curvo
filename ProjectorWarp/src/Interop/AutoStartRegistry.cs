@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace ProjectorWarp.Interop;
+namespace Curvo.Interop;
 
 /// <summary>
 /// Windows 로그온 시 자동 실행 등록 (HKCU Run 키). 관리자 권한이 필요하지 않다.
@@ -9,6 +9,7 @@ internal static class AutoStartRegistry
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = AppConfig.AppName;
+    private const string LegacyValueName = AppConfig.LegacyAppName;
 
     /// <summary>현재 실행 파일 경로. 단일 파일 배포에서도 올바른 exe 경로를 반환한다.</summary>
     public static string? ExecutablePath => Environment.ProcessPath;
@@ -78,6 +79,7 @@ internal static class AutoStartRegistry
     /// </summary>
     public static void SyncPathIfEnabled()
     {
+        MigrateLegacyValue();
         if (!IsEnabled()) return;
 
         string? expected = BuildCommand();
@@ -93,6 +95,27 @@ internal static class AutoStartRegistry
         catch (Exception)
         {
             // 경로 갱신 실패는 치명적이지 않다.
+        }
+    }
+
+    /// <summary>
+    /// 예전 이름(ProjectorWarp)으로 등록된 Run 항목을 새 이름으로 옮긴다.
+    /// 그냥 두면 지워지지 않은 옛 항목이 이제 존재하지 않는 exe 를 로그온마다 실행하려 든다.
+    /// </summary>
+    private static void MigrateLegacyValue()
+    {
+        try
+        {
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+            if (key?.GetValue(LegacyValueName) is not string legacy || string.IsNullOrWhiteSpace(legacy)) return;
+
+            // 새 이름이 이미 있으면 옛 항목만 치운다.
+            if (key.GetValue(ValueName) is not string) key.SetValue(ValueName, legacy, RegistryValueKind.String);
+            key.DeleteValue(LegacyValueName, throwOnMissingValue: false);
+        }
+        catch (Exception)
+        {
+            // 이전 실패는 치명적이지 않다. 사용자가 체크박스로 다시 켜면 된다.
         }
     }
 

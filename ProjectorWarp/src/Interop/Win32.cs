@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ProjectorWarp.Interop;
+namespace Curvo.Interop;
 
 /// <summary>
 /// 창/모니터 열거, 네이티브 창 생성, 캡처 제외 설정 등에 필요한 Win32 P/Invoke 모음.

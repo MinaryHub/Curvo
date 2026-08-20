@@ -2,10 +2,10 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
-using ProjectorWarp.Capture;
-using ProjectorWarp.Interop;
+using Curvo.Capture;
+using Curvo.Interop;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 internal enum OutputMouseButton
 {

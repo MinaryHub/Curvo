@@ -1,4 +1,4 @@
-namespace ProjectorWarp.Geometry;
+namespace Curvo.Geometry;
 
 /// <summary>워핑 상태 스냅샷 기반 실행 취소 / 다시 실행.</summary>
 internal sealed class UndoHistory

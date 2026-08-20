@@ -2,7 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ProjectorWarp.Presets;
+namespace Curvo.Presets;
 
 /// <summary>프리셋 JSON 저장/불러오기와 마지막 세션 상태 자동 복원.</summary>
 internal static class PresetStore

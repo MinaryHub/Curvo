@@ -1,11 +1,11 @@
 using System.Windows.Threading;
 using Vortice.Direct3D11;
 using Windows.Graphics;
-using ProjectorWarp.Capture;
-using ProjectorWarp.Geometry;
-using ProjectorWarp.Media;
+using Curvo.Capture;
+using Curvo.Geometry;
+using Curvo.Media;
 
-namespace ProjectorWarp.Rendering;
+namespace Curvo.Rendering;
 
 /// <summary>현재 화면에 내보내는 소스 종류.</summary>
 internal enum ProjectionSourceKind
@@ -355,7 +355,7 @@ internal sealed class ProjectionEngine : IDisposable
         _videoThread = new Thread(VideoRenderLoop)
         {
             IsBackground = true,
-            Name = "ProjectorWarp.VideoRender",
+            Name = "Curvo.VideoRender",
         };
         _videoThread.Start();
     }
