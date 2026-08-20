@@ -42,7 +42,7 @@ internal static class ShaderLoader
             if (result.Failure || blob is null)
             {
                 string message = errors is null ? $"HRESULT 0x{result.Code:X8}" : errors.AsString();
-                throw new InvalidOperationException($"셰이더 컴파일 실패 ({fileName}:{entryPoint})\n{message}");
+                throw new InvalidOperationException($"Shader compilation failed ({fileName}:{entryPoint})\n{message}");
             }
             return blob.AsMemory().ToArray();
         }
@@ -63,7 +63,7 @@ internal static class ShaderLoader
         Assembly assembly = typeof(ShaderLoader).Assembly;
         string resourceName = ResourcePrefix + fileName;
         using Stream? stream = assembly.GetManifestResourceStream(resourceName)
-            ?? throw new FileNotFoundException($"셰이더 리소스를 찾을 수 없습니다: {resourceName}");
+            ?? throw new FileNotFoundException($"Shader resource not found: {resourceName}");
 
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);

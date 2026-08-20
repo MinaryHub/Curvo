@@ -88,7 +88,7 @@ internal sealed class OutputWindow : IDisposable
 
         _classAtom = Win32.RegisterClassExW(ref windowClass);
         if (_classAtom == 0)
-            throw new InvalidOperationException($"출력 창 클래스 등록에 실패했습니다. (오류 {Marshal.GetLastWin32Error()})");
+            throw new InvalidOperationException($"Could not register the output window class. (error {Marshal.GetLastWin32Error()})");
     }
 
     private void CreateNativeWindow()
@@ -104,7 +104,7 @@ internal sealed class OutputWindow : IDisposable
             IntPtr.Zero, IntPtr.Zero, Win32.GetModuleHandleW(null), IntPtr.Zero);
 
         if (_handle == IntPtr.Zero)
-            throw new InvalidOperationException($"출력 창 생성에 실패했습니다. (오류 {Marshal.GetLastWin32Error()})");
+            throw new InvalidOperationException($"Could not create the output window. (error {Marshal.GetLastWin32Error()})");
 
         Instances[_handle] = this;
         Width = bounds.Width;

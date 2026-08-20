@@ -140,7 +140,7 @@ internal static class SourceEnumerator
         }
         catch
         {
-            return "(알 수 없음)";
+            return "(unknown)";
         }
     }
 

@@ -7,7 +7,7 @@ internal static class AppConfig
 {
     public const string AppName = "ProjectorWarp";
     public const string OutputWindowClassName = "ProjectorWarpOutputWindow";
-    public const string OutputWindowTitle = "ProjectorWarp 출력";
+    public const string OutputWindowTitle = "ProjectorWarp Output";
 
     // ---- 베지어 제어점 격자 ----------------------------------------------
     public const int MinGridSize = 3;

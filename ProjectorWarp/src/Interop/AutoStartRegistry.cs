@@ -39,14 +39,14 @@ internal static class AutoStartRegistry
         string? command = BuildCommand();
         if (command is null)
         {
-            error = "실행 파일 경로를 확인할 수 없습니다.";
+            error = "The executable path could not be determined.";
             return false;
         }
 
         try
         {
             using RegistryKey key = Registry.CurrentUser.CreateSubKey(RunKeyPath, writable: true)
-                ?? throw new InvalidOperationException("Run 레지스트리 키를 열 수 없습니다.");
+                ?? throw new InvalidOperationException("The Run registry key could not be opened.");
             key.SetValue(ValueName, command, RegistryValueKind.String);
             return true;
         }

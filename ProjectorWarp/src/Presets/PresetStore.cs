@@ -35,12 +35,12 @@ internal static class PresetStore
             if (preset is null) return null;
             if (preset.Version > AppConfig.PresetSchemaVersion)
                 throw new InvalidOperationException(
-                    $"이 프리셋은 더 새로운 버전({preset.Version})입니다. 앱을 업데이트하세요.");
+                    $"This preset is from a newer version ({preset.Version}). Please update the app.");
             return preset;
         }
         catch (JsonException ex)
         {
-            throw new InvalidOperationException($"프리셋 파일을 읽을 수 없습니다: {ex.Message}", ex);
+            throw new InvalidOperationException($"The preset file could not be read: {ex.Message}", ex);
         }
     }
 

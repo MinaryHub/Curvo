@@ -51,7 +51,7 @@ public partial class App : Application
     private static void ReportFatal(Exception exception)
     {
         MessageBox.Show(
-            $"예기치 않은 오류가 발생했습니다.\n\n{exception.GetType().Name}: {exception.Message}\n\n{exception.StackTrace}",
+            $"An unexpected error occurred.\n\n{exception.GetType().Name}: {exception.Message}\n\n{exception.StackTrace}",
             AppConfig.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
     }
 }

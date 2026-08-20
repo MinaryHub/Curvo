@@ -49,11 +49,11 @@ internal static class SlideImporter
     {
         string images = string.Join(";", ImageExtensions.Select(extension => "*" + extension));
         string presentations = string.Join(";", PresentationExtensions.Select(extension => "*" + extension));
-        return $"슬라이드로 열 수 있는 파일|{presentations};*{PdfExtension};{images}" +
+        return $"Files that can be shown as slides|{presentations};*{PdfExtension};{images}" +
                $"|PowerPoint ({presentations})|{presentations}" +
                $"|PDF (*{PdfExtension})|*{PdfExtension}" +
-               $"|이미지 ({images})|{images}" +
-               "|모든 파일 (*.*)|*.*";
+               $"|Images ({images})|{images}" +
+               "|All files (*.*)|*.*";
     }
 
     /// <summary>
@@ -61,13 +61,13 @@ internal static class SlideImporter
     /// </summary>
     public static List<string> Import(string path, Action<string>? progress = null)
     {
-        if (!File.Exists(path)) throw new FileNotFoundException("파일을 찾을 수 없습니다.", path);
+        if (!File.Exists(path)) throw new FileNotFoundException("The file could not be found.", path);
 
         if (IsImage(path)) return new List<string> { path };
         if (IsPdf(path)) return ImportPdf(path, progress);
         if (IsPresentation(path)) return ImportPresentation(path, progress);
 
-        throw new NotSupportedException($"지원하지 않는 형식입니다: {Path.GetExtension(path)}");
+        throw new NotSupportedException($"Unsupported format: {Path.GetExtension(path)}");
     }
 
     /// <summary>여러 이미지를 한 번에 슬라이드로 만든다(자연 정렬).</summary>
@@ -80,7 +80,7 @@ internal static class SlideImporter
         string cacheDirectory = GetCacheDirectory(path);
         if (TryUseCache(cacheDirectory, out List<string> cached)) return cached;
 
-        progress?.Invoke("PDF 페이지를 이미지로 변환하는 중…");
+        progress?.Invoke("Converting PDF pages to images…");
         Directory.CreateDirectory(cacheDirectory);
 
         RenderPdfAsync(path, cacheDirectory, progress).GetAwaiter().GetResult();
@@ -97,7 +97,7 @@ internal static class SlideImporter
 
         for (uint index = 0; index < document.PageCount; index++)
         {
-            progress?.Invoke($"PDF 변환 중… {index + 1}/{document.PageCount}");
+            progress?.Invoke($"Converting PDF… {index + 1}/{document.PageCount}");
             using PdfPage page = document.GetPage(index);
             var options = new PdfPageRenderOptions { DestinationWidth = (uint)AppConfig.SlideRenderWidth };
 
@@ -120,18 +120,18 @@ internal static class SlideImporter
         if (applicationType is null)
         {
             throw new InvalidOperationException(
-                "PowerPoint 가 설치되어 있지 않아 PPT 를 변환할 수 없습니다.\n" +
-                "PowerPoint 에서 [파일 → 내보내기 → PDF] 또는 [다른 이름으로 저장 → PNG] 로 저장한 뒤 그 파일을 여세요.");
+                "PowerPoint is not installed, so PPT files cannot be converted.\n" +
+                "In PowerPoint, use File > Export > PDF or Save As > PNG, then open that file instead.");
         }
 
-        progress?.Invoke("PowerPoint 로 슬라이드를 이미지로 내보내는 중…");
+        progress?.Invoke("Exporting slides to images with PowerPoint…");
         Directory.CreateDirectory(cacheDirectory);
 
         object? application = null;
         try
         {
             application = Activator.CreateInstance(applicationType)
-                ?? throw new InvalidOperationException("PowerPoint 를 시작할 수 없습니다.");
+                ?? throw new InvalidOperationException("PowerPoint could not be started.");
             ExportWithPowerPoint(application, Path.GetFullPath(path), cacheDirectory);
         }
         finally
@@ -145,7 +145,7 @@ internal static class SlideImporter
 
         List<string> slides = CollectSlides(cacheDirectory);
         if (slides.Count == 0)
-            throw new InvalidOperationException("PowerPoint 내보내기 결과가 없습니다. 파일이 손상되었거나 슬라이드가 없습니다.");
+            throw new InvalidOperationException("The PowerPoint export produced nothing. The file may be damaged or have no slides.");
 
         MarkCacheComplete(cacheDirectory);
         return slides;

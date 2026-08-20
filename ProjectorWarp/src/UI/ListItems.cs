@@ -47,7 +47,7 @@ internal sealed class GridSizeListItem
 {
     public required int Size { get; init; }
 
-    public string Label => $"{Size} x {Size} ({Size * Size}개 제어점)";
+    public string Label => $"{Size} x {Size} ({Size * Size} control points)";
 
     public static GridSizeListItem Create(int size) => new() { Size = size };
 

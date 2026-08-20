@@ -73,7 +73,7 @@ internal static class UpdateService
     public static async Task<ReleaseInfo?> CheckAsync(CancellationToken cancellation)
     {
         if (!TryParseRepository(Repository, out string normalized))
-            throw new InvalidOperationException($"빌드에 지정된 저장소 값이 올바르지 않습니다: \"{Repository}\"");
+            throw new InvalidOperationException($"The repository configured in this build is not valid: \"{Repository}\"");
 
         string url = string.Format(AppConfig.UpdateReleaseApiFormat, normalized);
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -109,7 +109,7 @@ internal static class UpdateService
                 : string.Empty;
             if (!TryParseVersion(tag, out Version? version))
             {
-                error = $"릴리스 태그에서 버전을 읽지 못했습니다: \"{tag}\"";
+                error = $"Could not read a version from the release tag: \"{tag}\"";
                 return false;
             }
 
@@ -119,7 +119,7 @@ internal static class UpdateService
 
             if (!TryPickAsset(root, out string assetName, out string downloadUrl, out string assetApiUrl, out long size))
             {
-                error = $"릴리스 {tag} 에 내려받을 {AppConfig.UpdateAssetName} 자산이 없습니다.";
+                error = $"Release {tag} has no {AppConfig.UpdateAssetName} asset to download.";
                 return false;
             }
 
@@ -128,7 +128,7 @@ internal static class UpdateService
         }
         catch (JsonException ex)
         {
-            error = $"릴리스 응답을 해석하지 못했습니다: {ex.Message}";
+            error = $"Could not parse the release response: {ex.Message}";
             return false;
         }
     }
@@ -192,7 +192,7 @@ internal static class UpdateService
     {
         string? current = Environment.ProcessPath;
         if (string.IsNullOrEmpty(current))
-            throw new InvalidOperationException("실행 파일 경로를 확인하지 못해 업데이트를 적용할 수 없습니다.");
+            throw new InvalidOperationException("Cannot apply the update: the executable path is unknown.");
 
         var startInfo = new ProcessStartInfo(stagedExePath) { UseShellExecute = false };
         startInfo.ArgumentList.Add(AppConfig.ApplyUpdateArgument);
@@ -223,7 +223,7 @@ internal static class UpdateService
         }
         catch (Exception ex)
         {
-            error = $"업데이트 적용에 실패했습니다. {ex.Message}\n\n대상: {target}";
+            error = $"Could not apply the update. {ex.Message}\n\nTarget: {target}";
         }
         return true;
     }
@@ -356,13 +356,13 @@ internal static class UpdateService
             // 404 는 "릴리스가 없다" 와 "볼 권한이 없다" 를 구분해 주지 않는다.
             // 비공개 저장소에 릴리스가 있어도 인증 없이는 똑같이 404 이므로 단정하지 않는다.
             404 => Token is null
-                ? $"{repository} 의 릴리스를 볼 수 없습니다. 비공개 저장소이면 " +
-                  $"{AppConfig.UpdateTokenEnvironmentVariable} 환경 변수에 읽기 권한 토큰이 필요합니다. " +
-                  "공개 저장소인데도 이 메시지가 보이면 아직 릴리스가 없는 것입니다."
-                : $"{repository} 에 릴리스가 없거나, 토큰에 이 저장소 읽기 권한이 없습니다.",
-            401 or 403 => $"GitHub 가 요청을 거부했습니다. {AppConfig.UpdateTokenEnvironmentVariable} 토큰이 " +
-                          "만료되었거나 요청 한도를 넘었을 수 있습니다.",
-            _ => $"업데이트 확인에 실패했습니다. (HTTP {(int)response.StatusCode} {response.ReasonPhrase})",
+                ? $"Cannot see the releases of {repository}. If it is a private repository, a token with " +
+                  $"read access is needed in the {AppConfig.UpdateTokenEnvironmentVariable} environment variable. " +
+                  "If the repository is public, then it has no releases yet."
+                : $"{repository} has no releases, or the token cannot read this repository.",
+            401 or 403 => $"GitHub refused the request. The {AppConfig.UpdateTokenEnvironmentVariable} token may " +
+                          "have expired, or the rate limit was reached.",
+            _ => $"Could not check for updates. (HTTP {(int)response.StatusCode} {response.ReasonPhrase})",
         };
 
     private static HttpClient CreateClient()

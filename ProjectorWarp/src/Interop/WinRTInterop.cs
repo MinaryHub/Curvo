@@ -111,7 +111,7 @@ internal static unsafe class WinRTInterop
     {
         IntPtr surfacePtr = WinRT.MarshalInspectable<IDirect3DSurface>.FromManaged(surface);
         if (surfacePtr == IntPtr.Zero)
-            throw new InvalidOperationException("캡처 서피스의 네이티브 포인터를 얻지 못했습니다.");
+            throw new InvalidOperationException("Could not obtain the native pointer of the capture surface.");
 
         try
         {

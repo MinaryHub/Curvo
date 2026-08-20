@@ -105,7 +105,7 @@ internal sealed class ProjectionEngine : IDisposable
         {
             _window.MoveToMonitor(monitor);
             RequestRender();
-            Report($"출력 모니터를 {monitor.DeviceName} 로 이동했습니다.");
+            Report($"Moved the output to {monitor.DeviceName}.");
             return;
         }
 
@@ -116,9 +116,9 @@ internal sealed class ProjectionEngine : IDisposable
         OutputWindowCreated?.Invoke(_window);
 
         if (!_window.IsExcludedFromCapture)
-            Report("경고: 출력 창을 캡처 대상에서 제외하지 못했습니다. 모니터 캡처 시 피드백 루프가 발생할 수 있습니다.");
+            Report("Warning: could not exclude the output window from capture. Capturing a whole monitor may create a feedback loop.");
         else
-            Report($"{monitor.DeviceName} 에 출력 창을 열었습니다.");
+            Report($"Opened the output window on {monitor.DeviceName}.");
 
         RequestRender();
 
@@ -143,7 +143,7 @@ internal sealed class ProjectionEngine : IDisposable
             _window.Dispose();
             _window = null;
         }
-        Report("출력을 중지했습니다.");
+        Report("Output stopped.");
     }
 
     /// <summary>캡처 소스를 지정한다. 출력 창이 아직 없으면 열릴 때 시작한다.</summary>
@@ -151,7 +151,7 @@ internal sealed class ProjectionEngine : IDisposable
     {
         if (!CaptureEngine.IsSupported)
         {
-            Report("이 PC 에서는 Windows.Graphics.Capture 를 사용할 수 없습니다. (Windows 10 1903 이상 필요)");
+            Report("Windows.Graphics.Capture is not available on this PC. Windows 10 1903 or later is required.");
             return;
         }
 
@@ -160,7 +160,7 @@ internal sealed class ProjectionEngine : IDisposable
         if (_window is null)
         {
             _pendingSource = target;
-            Report("출력 모니터를 먼저 선택하세요. 선택하면 캡처가 시작됩니다.");
+            Report("Choose an output monitor first — capture starts as soon as you do.");
             return;
         }
 
@@ -171,11 +171,11 @@ internal sealed class ProjectionEngine : IDisposable
             _capture!.Start(target);
             ActiveSourceKind = ProjectionSourceKind.Capture;
             MediaPath = null;
-            Report($"캡처 시작: {target.DisplayName}");
+            Report($"Capturing: {target.DisplayName}");
         }
         catch (Exception ex)
         {
-            Report($"캡처를 시작하지 못했습니다: {ex.Message}");
+            Report($"Could not start capture: {ex.Message}");
         }
     }
 
@@ -245,17 +245,17 @@ internal sealed class ProjectionEngine : IDisposable
 
         if (_window is null)
         {
-            Report("출력 모니터를 먼저 선택하세요.");
+            Report("Choose an output monitor first.");
             return;
         }
 
         try
         {
             _video = new VideoPlayer(_graphics!);
-            _video.Failed += message => _dispatcher.BeginInvoke(() => Report($"동영상 오류: {message}"));
+            _video.Failed += message => _dispatcher.BeginInvoke(() => Report($"Video error: {message}"));
             _video.Ended += () => _dispatcher.BeginInvoke(() => MediaEnded?.Invoke());
             _video.MetadataLoaded += () => _dispatcher.BeginInvoke(() =>
-                Report($"동영상 재생: {Path.GetFileName(path)} ({FormatDuration(_video?.Duration ?? 0)})"));
+                Report($"Playing {Path.GetFileName(path)} ({FormatDuration(_video?.Duration ?? 0)})"));
 
             _video.Open(path, loop, volume);
             ActiveSourceKind = ProjectionSourceKind.Video;
@@ -265,7 +265,7 @@ internal sealed class ProjectionEngine : IDisposable
         catch (Exception ex)
         {
             StopMedia();
-            Report($"동영상을 열지 못했습니다: {ex.Message}");
+            Report($"Could not open the video: {ex.Message}");
         }
     }
 
@@ -277,12 +277,12 @@ internal sealed class ProjectionEngine : IDisposable
 
         if (_window is null)
         {
-            Report("출력 모니터를 먼저 선택하세요.");
+            Report("Choose an output monitor first.");
             return;
         }
         if (slidePaths.Count == 0)
         {
-            Report("표시할 슬라이드가 없습니다.");
+            Report("There are no slides to show.");
             return;
         }
 
@@ -293,12 +293,12 @@ internal sealed class ProjectionEngine : IDisposable
             ActiveSourceKind = ProjectionSourceKind.Slides;
             MediaPath = originalPath;
             PushSlideToRenderer();
-            Report($"슬라이드 재생: {label} ({slidePaths.Count}장)");
+            Report($"Showing slides: {label} ({slidePaths.Count} pages)");
         }
         catch (Exception ex)
         {
             StopMedia();
-            Report($"슬라이드를 열지 못했습니다: {ex.Message}");
+            Report($"Could not open the slides: {ex.Message}");
         }
     }
 
@@ -405,7 +405,7 @@ internal sealed class ProjectionEngine : IDisposable
             }
             catch (Exception ex)
             {
-                _dispatcher.BeginInvoke(() => Report($"동영상 렌더 오류: {ex.Message}"));
+                _dispatcher.BeginInvoke(() => Report($"Video render error: {ex.Message}"));
                 break;
             }
 
@@ -502,14 +502,14 @@ internal sealed class ProjectionEngine : IDisposable
 
     private void OnSourceClosed() => _dispatcher.BeginInvoke(() =>
     {
-        Report("캡처 대상 창이 닫혔습니다.");
+        Report("The captured window was closed.");
         StopCapture();
         SourceLost?.Invoke();
     });
 
     private void OnCaptureFailed(Exception exception) => _dispatcher.BeginInvoke(() =>
     {
-        Report($"캡처 오류: {exception.Message}");
+        Report($"Capture error: {exception.Message}");
         CheckDeviceLost();
     });
 
@@ -527,7 +527,7 @@ internal sealed class ProjectionEngine : IDisposable
     {
         try
         {
-            Report("그래픽 디바이스가 재설정되어 파이프라인을 다시 만듭니다.");
+            Report("The graphics device was reset — rebuilding the pipeline.");
 
             CaptureTarget? source = _capture?.CurrentTarget;
             MonitorInfo? monitor = _outputMonitor;
@@ -551,11 +551,11 @@ internal sealed class ProjectionEngine : IDisposable
             if (monitor is not null) StartOutput(monitor);
             if (source is not null && previousKind == ProjectionSourceKind.Capture) StartCapture(source);
             else if (previousMedia is not null)
-                Report($"디바이스를 복구했습니다. 미디어를 다시 열어주세요: {Path.GetFileName(previousMedia)}");
+                Report($"Device recovered. Please open the media again: {Path.GetFileName(previousMedia)}");
         }
         catch (Exception ex)
         {
-            Report($"디바이스 복구에 실패했습니다: {ex.Message}");
+            Report($"Could not recover the device: {ex.Message}");
         }
         finally
         {

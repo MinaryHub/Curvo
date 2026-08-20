@@ -83,7 +83,7 @@ internal sealed class GraphicsDevice : IDisposable
         }
 
         if (device is null || context is null)
-            throw new InvalidOperationException($"D3D11 디바이스를 만들지 못했습니다. (HRESULT 0x{result.Code:X8})");
+            throw new InvalidOperationException($"Could not create the D3D11 device. (HRESULT 0x{result.Code:X8})");
 
         // 캡처 스레드와 UI 스레드가 같은 컨텍스트를 사용하므로 멀티스레드 보호를 켠다.
         using (ID3D11Multithread? multithread = device!.QueryInterfaceOrNull<ID3D11Multithread>())

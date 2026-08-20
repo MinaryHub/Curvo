@@ -12,7 +12,7 @@ internal static class Bezier
     public static void ComputeBasis(int degree, float t, Span<float> basis)
     {
         if (basis.Length < degree + 1)
-            throw new ArgumentException("기저 배열 크기가 차수보다 작습니다.", nameof(basis));
+            throw new ArgumentException("The basis span is smaller than the degree.", nameof(basis));
 
         // 드 카스텔죠 방식의 점화식으로 이항계수 누적 오차 없이 계산한다.
         basis[0] = 1.0f;

@@ -18,7 +18,7 @@ namespace ProjectorWarp.UI;
 /// <summary>컨트롤 패널. 소스/출력 선택과 모든 보정 파라미터를 조작한다.</summary>
 public partial class MainWindow : Window
 {
-    private const string PresetFileFilter = "ProjectorWarp 프리셋 (*.json)|*.json|모든 파일 (*.*)|*.*";
+    private const string PresetFileFilter = "ProjectorWarp preset (*.json)|*.json|All files (*.*)|*.*";
     private const byte ThumbnailOpacity = 255;
 
     private readonly ProjectionEngine _engine;
@@ -70,12 +70,12 @@ public partial class MainWindow : Window
         _editor.SavePresetRequested += () => Dispatcher.BeginInvoke(SavePreset);
         _editor.OpenPresetRequested += () => Dispatcher.BeginInvoke(OpenPreset);
 
-        _engine.MediaEnded += () => StatusText.Text = "재생이 끝났습니다.";
+        _engine.MediaEnded += () => StatusText.Text = "Playback finished.";
         _engine.SlideChanged += UpdatePlaybackUi;
 
-        Title = $"{AppConfig.AppName} {UpdateService.CurrentVersionText} — 프로젝터 곡면 워핑";
-        VersionText.Text = $"버전 {UpdateService.CurrentVersionText}";
-        UpdateSourceText.Text = $"업데이트 확인 대상: {UpdateService.Repository}";
+        Title = $"{AppConfig.AppName} {UpdateService.CurrentVersionText} — Curved Surface Warping";
+        VersionText.Text = $"Version {UpdateService.CurrentVersionText}";
+        UpdateSourceText.Text = $"Update source: {UpdateService.Repository}";
         SponsorUrlText.Text = AppConfig.SponsorUrl;
 
         PopulateStaticCombos();
@@ -93,13 +93,13 @@ public partial class MainWindow : Window
     {
         PatternCombo.ItemsSource = new[]
         {
-            PatternListItem.Create(TestPattern.None, "없음"),
-            PatternListItem.Create(TestPattern.Grid, "격자"),
-            PatternListItem.Create(TestPattern.Checker, "체커보드"),
-            PatternListItem.Create(TestPattern.Rings, "원형 링"),
-            PatternListItem.Create(TestPattern.ColorBars, "컬러바"),
-            PatternListItem.Create(TestPattern.WhiteField, "화이트 풀필드"),
-            PatternListItem.Create(TestPattern.BlackField, "블랙 풀필드"),
+            PatternListItem.Create(TestPattern.None, "None"),
+            PatternListItem.Create(TestPattern.Grid, "Grid"),
+            PatternListItem.Create(TestPattern.Checker, "Checkerboard"),
+            PatternListItem.Create(TestPattern.Rings, "Concentric rings"),
+            PatternListItem.Create(TestPattern.ColorBars, "Colour bars"),
+            PatternListItem.Create(TestPattern.WhiteField, "White field"),
+            PatternListItem.Create(TestPattern.BlackField, "Black field"),
         };
         PatternCombo.DisplayMemberPath = nameof(PatternListItem.Label);
         PatternCombo.SelectedIndex = 0;
@@ -117,8 +117,8 @@ public partial class MainWindow : Window
         if (!CaptureEngine.IsSupported)
         {
             MessageBox.Show(this,
-                "이 PC 에서는 Windows.Graphics.Capture 를 사용할 수 없습니다.\n" +
-                "Windows 10 버전 1903(빌드 18362) 이상이 필요합니다.",
+                "Windows.Graphics.Capture is not available on this PC.\n" +
+                "Windows 10 version 1903 (build 18362) or later is required.",
                 AppConfig.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
             Close();
             return;
@@ -254,7 +254,7 @@ public partial class MainWindow : Window
         MonitorInfo? monitor = SelectedOutputMonitor();
         if (monitor is null)
         {
-            StatusText.Text = "출력 모니터를 선택하세요.";
+            StatusText.Text = "Choose an output monitor.";
             return;
         }
 
@@ -282,7 +282,7 @@ public partial class MainWindow : Window
         {
             if (!_media.IsActive)
             {
-                StatusText.Text = "[동영상 열기] 또는 [슬라이드 열기] 로 파일을 선택하세요.";
+                StatusText.Text = "Pick a file with Open video or Open slides.";
                 return;
             }
             await StartCurrentMediaAsync();
@@ -292,7 +292,7 @@ public partial class MainWindow : Window
         CaptureTarget? target = BuildSelectedTarget();
         if (target is null)
         {
-            StatusText.Text = "캡처할 창을 목록에서 선택하세요.";
+            StatusText.Text = "Select the window to capture from the list.";
             return;
         }
         _engine.StartCapture(target);
@@ -437,11 +437,11 @@ public partial class MainWindow : Window
         try
         {
             PresetStore.Save(BuildPreset(Path.GetFileNameWithoutExtension(dialog.FileName)), dialog.FileName);
-            StatusText.Text = $"프리셋을 저장했습니다: {dialog.FileName}";
+            StatusText.Text = $"Preset saved: {dialog.FileName}";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"프리셋 저장에 실패했습니다.\n{ex.Message}", AppConfig.AppName,
+            MessageBox.Show(this, $"Could not save the preset.\n{ex.Message}", AppConfig.AppName,
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -460,15 +460,15 @@ public partial class MainWindow : Window
             Preset? preset = PresetStore.Load(dialog.FileName);
             if (preset is null)
             {
-                StatusText.Text = "프리셋을 읽지 못했습니다.";
+                StatusText.Text = "Could not read the preset.";
                 return;
             }
             ApplyPreset(preset, restoreSourceAndOutput: true);
-            StatusText.Text = $"프리셋을 불러왔습니다: {preset.Name}";
+            StatusText.Text = $"Preset loaded: {preset.Name}";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"프리셋을 불러오지 못했습니다.\n{ex.Message}", AppConfig.AppName,
+            MessageBox.Show(this, $"Could not load the preset.\n{ex.Message}", AppConfig.AppName,
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -531,14 +531,14 @@ public partial class MainWindow : Window
     {
         if (preset.Source.Kind == CaptureSourceKind.Monitor)
         {
-            StatusText.Text = "모니터 전체 캡처는 더 이상 지원하지 않습니다. [내장 재생] 또는 [창] 에서 소스를 선택하세요.";
+            StatusText.Text = "Whole-monitor capture is no longer supported. Choose a source on the Built-in playback or Window tab.";
             return;
         }
 
         WindowInfo? window = SourceEnumerator.FindWindow(_windows, preset.Source.MatchTitle, preset.Source.MatchProcess);
         if (window is null)
         {
-            StatusText.Text = "프리셋의 캡처 대상 창을 찾지 못했습니다. 목록에서 직접 선택하세요.";
+            StatusText.Text = "The window this preset captures was not found. Select one from the list.";
             return;
         }
 
@@ -560,7 +560,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"시작 프리셋을 읽지 못했습니다: {ex.Message}";
+            StatusText.Text = $"Could not read the start-up preset: {ex.Message}";
             return;
         }
         if (preset is null) return;
@@ -576,12 +576,12 @@ public partial class MainWindow : Window
             PreselectSource(preset);
 
             StatusText.Text = fromFile
-                ? $"시작 프리셋을 불러왔습니다: {Path.GetFileName(presetPath)}"
-                : "마지막 상태를 복원했습니다. [출력 시작] 을 눌러 투사를 시작하세요.";
+                ? $"Start-up preset loaded: {Path.GetFileName(presetPath)}"
+                : "Last state restored. Press Start output to begin projecting.";
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"시작 상태를 복원하지 못했습니다: {ex.Message}";
+            StatusText.Text = $"Could not restore the start-up state: {ex.Message}";
         }
     }
 
@@ -606,7 +606,7 @@ public partial class MainWindow : Window
             LoopCheck.IsChecked = _media.Loop;
             VolumeSlider.Value = Math.Clamp(_media.Volume, 0.0, 1.0);
             SlideIntervalSlider.Value = Math.Clamp(_media.SlideIntervalSeconds, 0.0, AppConfig.MaxSlideIntervalSeconds);
-            SlideIntervalText.Text = _media.SlideIntervalSeconds <= 0 ? "수동" : $"{_media.SlideIntervalSeconds:F0}초";
+            SlideIntervalText.Text = _media.SlideIntervalSeconds <= 0 ? "Manual" : $"{_media.SlideIntervalSeconds:F0} s";
         }
         finally
         {
@@ -804,13 +804,13 @@ public partial class MainWindow : Window
         }
 
         SlideIndexText.Text = slides is not null && slides.Count > 0
-            ? $"{slides.CurrentIndex + 1} / {slides.Count} 장"
+            ? $"{slides.CurrentIndex + 1} / {slides.Count}"
             : string.Empty;
 
         MediaFileText.Text = _media.IsActive
-            ? $"{(_media.IsVideo ? "동영상" : "슬라이드")}: {Path.GetFileName(_media.Path)}" +
-              (mediaActive ? "  (재생 중)" : "  (대기)")
-            : "열린 파일이 없습니다.";
+            ? $"{(_media.IsVideo ? "Video" : "Slides")}: {Path.GetFileName(_media.Path)}" +
+              (mediaActive ? "  (playing)" : "  (idle)")
+            : "No file open.";
     }
 
     private static string FormatTime(double seconds)
@@ -825,12 +825,12 @@ public partial class MainWindow : Window
     private static string BuildVideoFilter()
     {
         string patterns = string.Join(";", VideoPlayer.SupportedExtensions.Select(extension => "*" + extension));
-        return $"동영상 파일 ({patterns})|{patterns}|모든 파일 (*.*)|*.*";
+        return $"Video files ({patterns})|{patterns}|All files (*.*)|*.*";
     }
 
     private async void OnOpenVideoClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Filter = BuildVideoFilter(), Title = "재생할 동영상 선택" };
+        var dialog = new OpenFileDialog { Filter = BuildVideoFilter(), Title = "Choose a video to play" };
         if (dialog.ShowDialog(this) != true) return;
 
         _slidePaths.Clear();
@@ -850,7 +850,7 @@ public partial class MainWindow : Window
         var dialog = new OpenFileDialog
         {
             Filter = SlideImporter.BuildFileFilter(),
-            Title = "슬라이드로 재생할 파일 선택",
+            Title = "Choose a file to show as slides",
             Multiselect = true,
         };
         if (dialog.ShowDialog(this) != true) return;
@@ -883,7 +883,7 @@ public partial class MainWindow : Window
         _media = new PresetMedia();
         _slidePaths.Clear();
         UpdatePlaybackUi();
-        StatusText.Text = "내장 재생을 닫았습니다.";
+        StatusText.Text = "Built-in playback closed.";
     }
 
     /// <summary>현재 선택된 미디어를 실제로 재생한다(필요하면 출력 창을 먼저 연다).</summary>
@@ -892,7 +892,7 @@ public partial class MainWindow : Window
         if (!_media.IsActive || _media.Path is null) return false;
         if (!File.Exists(_media.Path))
         {
-            StatusText.Text = $"파일을 찾을 수 없습니다: {_media.Path}";
+            StatusText.Text = $"File not found: {_media.Path}";
             return false;
         }
         if (!EnsureOutputStarted()) return false;
@@ -922,7 +922,7 @@ public partial class MainWindow : Window
 
     private async Task<List<string>?> ImportSlidesAsync(string path)
     {
-        StatusText.Text = "슬라이드를 변환하는 중…";
+        StatusText.Text = "Converting slides…";
         try
         {
             return await Task.Run(() => SlideImporter.Import(path,
@@ -931,7 +931,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(this, ex.Message, AppConfig.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
-            StatusText.Text = "슬라이드 변환에 실패했습니다.";
+            StatusText.Text = "Slide conversion failed.";
             return null;
         }
     }
@@ -943,7 +943,7 @@ public partial class MainWindow : Window
         MonitorInfo? monitor = SelectedOutputMonitor();
         if (monitor is null)
         {
-            StatusText.Text = "출력 모니터를 먼저 선택하세요.";
+            StatusText.Text = "Choose an output monitor first.";
             return false;
         }
         _engine.StartOutput(monitor);
@@ -999,7 +999,7 @@ public partial class MainWindow : Window
     {
         if (_suppressSync) return;
         _media.SlideIntervalSeconds = e.NewValue;
-        SlideIntervalText.Text = e.NewValue <= 0 ? "수동" : $"{e.NewValue:F0}초";
+        SlideIntervalText.Text = e.NewValue <= 0 ? "Manual" : $"{e.NewValue:F0} s";
         RestartSlideAdvanceTimer();
     }
 
@@ -1037,7 +1037,7 @@ public partial class MainWindow : Window
             AutoStartRetrySlider.Value = _appSettings.AutoStartRetrySeconds;
             TopmostCheck.IsChecked = _appSettings.OutputTopmost;
             StartupPresetText.Text = string.IsNullOrWhiteSpace(_appSettings.StartupPresetPath)
-                ? "마지막 상태 (앱 종료 시 자동 저장됨)"
+                ? "Last state (saved automatically on exit)"
                 : _appSettings.StartupPresetPath;
             CancelAutoStartButton.IsEnabled = _autoStartTimer is not null;
             CheckUpdateOnStartupCheck.IsChecked = _appSettings.CheckForUpdatesOnStartup;
@@ -1052,10 +1052,10 @@ public partial class MainWindow : Window
     {
         if (AppSettingsStore.TrySave(_appSettings, out string? error))
         {
-            if (!quiet) StatusText.Text = $"설정을 저장했습니다: {AppSettingsStore.FilePath}";
+            if (!quiet) StatusText.Text = $"Settings saved: {AppSettingsStore.FilePath}";
             return;
         }
-        StatusText.Text = $"설정을 저장하지 못했습니다: {error}";
+        StatusText.Text = $"Could not save the settings: {error}";
     }
 
     private void OnLaunchAtLogonChanged(object sender, RoutedEventArgs e)
@@ -1069,7 +1069,7 @@ public partial class MainWindow : Window
 
         if (!succeeded)
         {
-            StatusText.Text = $"자동 실행 설정을 변경하지 못했습니다: {error}";
+            StatusText.Text = $"Could not change the launch-at-logon setting: {error}";
             _suppressSync = true;
             LaunchAtLogonCheck.IsChecked = AutoStartRegistry.IsEnabled();
             _suppressSync = false;
@@ -1079,8 +1079,8 @@ public partial class MainWindow : Window
         _appSettings.LaunchAtLogon = enable;
         SaveAppSettings(quiet: true);
         StatusText.Text = enable
-            ? $"로그온 시 자동 실행을 등록했습니다. ({AutoStartRegistry.ExecutablePath})"
-            : "로그온 시 자동 실행을 해제했습니다.";
+            ? $"Launch at logon is on. ({AutoStartRegistry.ExecutablePath})"
+            : "Launch at logon is off.";
     }
 
     private void OnAutoStartOptionChanged(object sender, RoutedEventArgs e)
@@ -1103,7 +1103,7 @@ public partial class MainWindow : Window
         _appSettings.StartupPresetPath = dialog.FileName;
         SaveAppSettings(quiet: true);
         SyncAppSettingsUi();
-        StatusText.Text = $"시작 프리셋을 지정했습니다: {Path.GetFileName(dialog.FileName)}";
+        StatusText.Text = $"Start-up preset set: {Path.GetFileName(dialog.FileName)}";
     }
 
     private void OnClearStartupPresetClick(object sender, RoutedEventArgs e)
@@ -1111,7 +1111,7 @@ public partial class MainWindow : Window
         _appSettings.StartupPresetPath = null;
         SaveAppSettings(quiet: true);
         SyncAppSettingsUi();
-        StatusText.Text = "시작 시 마지막 상태를 사용합니다.";
+        StatusText.Text = "The last state will be used at start-up.";
     }
 
     /// <summary>보정값과 앱 설정을 한 번에 저장한다.</summary>
@@ -1125,17 +1125,17 @@ public partial class MainWindow : Window
         {
             PresetStore.Save(BuildPreset(Path.GetFileNameWithoutExtension(target)), target);
             SaveAppSettings(quiet: true);
-            StatusText.Text = $"현재 설정을 저장했습니다: {target}";
+            StatusText.Text = $"Current setup saved: {target}";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"설정 저장에 실패했습니다. {ex.Message}", AppConfig.AppName,
+            MessageBox.Show(this, $"Could not save the setup. {ex.Message}", AppConfig.AppName,
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
     private void OnCancelAutoStartClick(object sender, RoutedEventArgs e)
-        => CancelAutoStart("자동 시작을 취소했습니다.");
+        => CancelAutoStart("Auto-start cancelled.");
 
     /// <summary>저장된 출력 모니터와 캡처 소스로 자동 연결을 시도한다(대상이 준비될 때까지 재시도).</summary>
     private void BeginAutoStart()
@@ -1157,8 +1157,8 @@ public partial class MainWindow : Window
 
         CancelAutoStartButton.IsEnabled = true;
         StatusText.Text = fromLogon
-            ? $"자동 시작 대기 중... ({AppConfig.LogonStartDelaySeconds}초 후 연결)"
-            : "자동 시작을 진행합니다...";
+            ? $"Auto-start waiting… (connecting in {AppConfig.LogonStartDelaySeconds} s)"
+            : "Auto-start running…";
     }
 
     private void OnAutoStartTick(object? sender, EventArgs e)
@@ -1175,7 +1175,7 @@ public partial class MainWindow : Window
                 ?? SelectedOutputMonitor();
             if (monitor is null)
             {
-                FailAutoStartIfExpired("자동 시작: 출력 모니터를 찾지 못했습니다.");
+                FailAutoStartIfExpired("Auto-start: no output monitor found.");
                 return;
             }
             _engine.StartOutput(monitor);
@@ -1187,27 +1187,27 @@ public partial class MainWindow : Window
             _ = StartCurrentMediaAsync().ContinueWith(task =>
             {
                 if (task.IsCompletedSuccessfully && task.Result)
-                    Dispatcher.BeginInvoke(() => CancelAutoStart($"자동 시작 완료: {Path.GetFileName(_media.Path)}"));
+                    Dispatcher.BeginInvoke(() => CancelAutoStart($"Auto-start done: {Path.GetFileName(_media.Path)}"));
             }, TaskScheduler.Default);
-            FailAutoStartIfExpired("자동 시작: 미디어 파일을 열지 못했습니다.");
+            FailAutoStartIfExpired("Auto-start: could not open the media file.");
             return;
         }
 
         CaptureTarget? target = ResolveAutoStartSource();
         if (target is null)
         {
-            FailAutoStartIfExpired("자동 시작: 캡처 대상을 찾지 못했습니다. 목록에서 직접 선택하세요.");
+            FailAutoStartIfExpired("Auto-start: capture target not found. Select one from the list.");
             return;
         }
 
         _engine.StartCapture(target);
         if (!_engine.IsCapturing)
         {
-            FailAutoStartIfExpired("자동 시작: 캡처를 시작하지 못했습니다.");
+            FailAutoStartIfExpired("Auto-start: could not start capture.");
             return;
         }
 
-        CancelAutoStart($"자동 시작 완료: {target.DisplayName}");
+        CancelAutoStart($"Auto-start done: {target.DisplayName}");
         UpdateFeedbackWarning();
     }
 
@@ -1264,7 +1264,7 @@ public partial class MainWindow : Window
 
         _updateBusy = true;
         CheckUpdateButton.IsEnabled = false;
-        UpdateStatusText.Text = "새 버전을 확인하는 중…";
+        UpdateStatusText.Text = "Checking for a new version…";
         try
         {
             ReleaseInfo? release = await UpdateService.CheckAsync(CancellationToken.None);
@@ -1272,7 +1272,7 @@ public partial class MainWindow : Window
             {
                 _pendingRelease = null;
                 ApplyUpdateButton.Visibility = Visibility.Collapsed;
-                UpdateStatusText.Text = $"최신 버전입니다. (버전 {UpdateService.CurrentVersionText})";
+                UpdateStatusText.Text = $"You are up to date. (version {UpdateService.CurrentVersionText})";
                 return;
             }
 
@@ -1280,13 +1280,13 @@ public partial class MainWindow : Window
             _stagedUpdatePath = null;
             ApplyUpdateButton.Visibility = Visibility.Visible;
             UpdateStatusText.Text = FormatReleaseSummary(release);
-            StatusText.Text = $"새 버전 {release.Version} 이 있습니다. [9. 버전 · 업데이트] 에서 설치할 수 있습니다.";
+            StatusText.Text = $"Version {release.Version} is available. Install it under 9. Version · updates.";
         }
         catch (Exception ex)
         {
             UpdateStatusText.Text = ex is InvalidOperationException
                 ? ex.Message
-                : $"업데이트 확인에 실패했습니다: {ex.Message}";
+                : $"Could not check for updates: {ex.Message}";
         }
         finally
         {
@@ -1301,7 +1301,7 @@ public partial class MainWindow : Window
         if (release is null || _updateBusy) return;
 
         MessageBoxResult answer = MessageBox.Show(this,
-            $"버전 {release.Version} 을 설치하고 앱을 재시작합니다.\n투사가 잠시 중단됩니다. 계속할까요?",
+            $"Version {release.Version} will be installed and the app restarted.\nProjection stops briefly. Continue?",
             AppConfig.AppName, MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
 
@@ -1312,11 +1312,11 @@ public partial class MainWindow : Window
         UpdateProgress.Value = 0;
         try
         {
-            UpdateStatusText.Text = $"{release.AssetName} 을 내려받는 중…";
+            UpdateStatusText.Text = $"Downloading {release.AssetName}…";
             var progress = new Progress<double>(value => UpdateProgress.Value = value);
             _stagedUpdatePath ??= await UpdateService.DownloadAsync(release, progress, CancellationToken.None);
 
-            UpdateStatusText.Text = "설치하고 재시작합니다…";
+            UpdateStatusText.Text = "Installing and restarting…";
             UpdateService.StartApply(_stagedUpdatePath);
 
             // Close 로 끝내야 마지막 세션과 앱 설정이 저장된다.
@@ -1324,7 +1324,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            UpdateStatusText.Text = $"업데이트를 설치하지 못했습니다: {ex.Message}";
+            UpdateStatusText.Text = $"Could not install the update: {ex.Message}";
             UpdateProgress.Visibility = Visibility.Collapsed;
             ApplyUpdateButton.IsEnabled = true;
             CheckUpdateButton.IsEnabled = true;
@@ -1335,7 +1335,7 @@ public partial class MainWindow : Window
     private static string FormatReleaseSummary(ReleaseInfo release)
     {
         string size = release.Size > 0 ? $" · {release.Size / (1024.0 * 1024.0):F1} MB" : string.Empty;
-        return $"새 버전 {release.Version} (태그 {release.Tag}){size}{FormatReleaseNotes(release.Notes)}";
+        return $"Version {release.Version} (tag {release.Tag}){size}{FormatReleaseNotes(release.Notes)}";
     }
 
     /// <summary>릴리스 본문은 통째로 넣으면 패널을 밀어내므로 첫 줄만 짧게 보여준다.</summary>
@@ -1358,11 +1358,11 @@ public partial class MainWindow : Window
         {
             // 앱은 결제에 관여하지 않고 후원 페이지만 기본 브라우저로 연다.
             Process.Start(new ProcessStartInfo(AppConfig.SponsorUrl) { UseShellExecute = true });
-            StatusText.Text = $"후원 페이지를 열었습니다: {AppConfig.SponsorUrl}";
+            StatusText.Text = $"Opened the sponsor page: {AppConfig.SponsorUrl}";
         }
         catch (Exception ex)
         {
-            StatusText.Text = $"후원 페이지를 열지 못했습니다: {ex.Message}. 링크를 복사해 브라우저에 붙여넣으세요.";
+            StatusText.Text = $"Could not open the sponsor page: {ex.Message}. Copy the link and paste it into a browser.";
         }
     }
 
@@ -1371,12 +1371,12 @@ public partial class MainWindow : Window
         try
         {
             Clipboard.SetText(AppConfig.SponsorUrl);
-            StatusText.Text = "후원 링크를 클립보드에 복사했습니다.";
+            StatusText.Text = "Sponsor link copied to the clipboard.";
         }
         catch (Exception ex)
         {
             // 다른 프로그램이 클립보드를 잡고 있으면 실패할 수 있다.
-            StatusText.Text = $"링크를 복사하지 못했습니다: {ex.Message}";
+            StatusText.Text = $"Could not copy the link: {ex.Message}";
         }
     }
 

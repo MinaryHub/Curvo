@@ -48,7 +48,7 @@ internal sealed class MonitorInfo
     public int Height => Bounds.Height;
 
     public string DisplayText =>
-        $"{DeviceName}  {Width}x{Height} @ ({Bounds.Left},{Bounds.Top}){(IsPrimary ? "  [주 모니터]" : string.Empty)}";
+        $"{DeviceName}  {Width}x{Height} @ ({Bounds.Left},{Bounds.Top}){(IsPrimary ? "  [primary]" : string.Empty)}";
 
     public override string ToString() => DisplayText;
 }

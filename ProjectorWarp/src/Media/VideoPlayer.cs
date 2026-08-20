@@ -117,7 +117,7 @@ internal sealed class VideoPlayer : IDisposable
     public void Open(string path, bool loop, double volume, bool autoPlay = true)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (!File.Exists(path)) throw new FileNotFoundException("동영상 파일을 찾을 수 없습니다.", path);
+        if (!File.Exists(path)) throw new FileNotFoundException("The video file could not be found.", path);
 
         Close();
 
@@ -267,18 +267,18 @@ internal sealed class VideoPlayer : IDisposable
     {
         // 코덱과 무관한 파일 접근 실패가 "지원하지 않는 형식" 으로 보이면 원인을 찾기 어렵다.
         if (hresult is FileNotFoundHResult or PathNotFoundHResult)
-            return $"파일을 찾을 수 없습니다. (HRESULT 0x{hresult:X8})";
+            return $"The file could not be found. (HRESULT 0x{hresult:X8})";
         if (hresult == AccessDeniedHResult)
-            return $"파일을 읽을 권한이 없습니다. (HRESULT 0x{hresult:X8})";
+            return $"No permission to read the file. (HRESULT 0x{hresult:X8})";
 
         string reason = error switch
         {
-            MediaEngineError.Aborted => "재생이 중단되었습니다.",
-            MediaEngineError.Network => "파일을 읽는 중 오류가 발생했습니다.",
-            MediaEngineError.Decode => "디코딩에 실패했습니다. 코덱이 설치되지 않았을 수 있습니다.",
-            MediaEngineError.SrcNotSupported => "지원하지 않는 형식입니다. MP4(H.264) 로 변환해 보세요.",
-            MediaEngineError.Encrypted => "DRM 으로 보호된 파일은 재생할 수 없습니다.",
-            _ => "알 수 없는 재생 오류입니다.",
+            MediaEngineError.Aborted => "Playback was aborted.",
+            MediaEngineError.Network => "An error occurred while reading the file.",
+            MediaEngineError.Decode => "Decoding failed. The codec may not be installed.",
+            MediaEngineError.SrcNotSupported => "Unsupported format. Try converting to MP4 (H.264).",
+            MediaEngineError.Encrypted => "DRM-protected files cannot be played.",
+            _ => "Unknown playback error.",
         };
         return hresult == 0 ? reason : $"{reason} (HRESULT 0x{hresult:X8})";
     }
