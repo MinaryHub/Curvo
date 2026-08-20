@@ -250,13 +250,13 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ```powershell
 # 1. 버전을 올린다 (ProjectorWarp.csproj)
-#    <Version>1.1.1</Version>
+#    <Version>1.2.1</Version>
 
 # 2. 단일 실행파일을 만든다
 dotnet publish -c Release -o publish
 
-# 3. 공개 배포 저장소에 릴리스를 만들고 실행 파일을 자산으로 올린다
-gh release create v1.1.1 --repo MinaryHub/ProjectorWarp publish\ProjectorWarp.exe
+# 3. 릴리스를 만들고 실행 파일을 자산으로 올린다
+gh release create v1.2.1 --repo MinaryHub/Curvo publish\ProjectorWarp.exe
 ```
 
 | 항목 | 규칙 |
@@ -264,24 +264,20 @@ gh release create v1.1.1 --repo MinaryHub/ProjectorWarp publish\ProjectorWarp.ex
 | 릴리스 태그 | `v1.0.1` 또는 `1.0.1` (`-beta` 같은 접미사는 무시하고 숫자만 비교) |
 | 자산 이름 | `ProjectorWarp.exe` (없으면 릴리스의 첫 번째 `.exe`) |
 | 조회 주소 | `https://api.github.com/repos/{owner}/{repo}/releases/latest` |
-| 배포 저장소 | `MinaryHub/ProjectorWarp` (공개) — 실행 파일만 올립니다 |
+| 배포 저장소 | `MinaryHub/Curvo` (공개) — 소스와 릴리스를 함께 둡니다 |
 | 배포처 변경 | `src/AppConfig.cs` 의 `UpdateRepository` 상수 한 줄 |
-| 비공개 저장소 | 아래 참고 — 실행하는 환경에 토큰이 필요합니다 |
+| 저장소 공개 | **필수** — 아래 참고 |
 
-### 왜 배포 저장소를 따로 두는가
+### 저장소가 공개여야 하는 이유
 
-비공개 저장소의 릴리스는 **인증 없이 조회할 수 없습니다**(GitHub 이 릴리스가 없는 것과 똑같이 `404` 를 줍니다).
-소스 저장소를 비공개로 두면서 자동 업데이트를 설정 없이 쓰려면, 실행 파일만 공개 저장소에 올리는 편이 낫습니다.
+비공개 저장소의 릴리스는 **인증 없이 조회할 수 없습니다** — GitHub 이 릴리스가 없는 것과 똑같이 `404` 를
+돌려줍니다. 그래서 `MinaryHub/Curvo` 는 공개이고, 소스와 릴리스를 한곳에 둡니다.
 
 ```
-MinaryHub/Curvo          (private)  소스
-MinaryHub/ProjectorWarp  (public)   릴리스 · 실행 파일  ← 앱이 확인하는 곳
+MinaryHub/Curvo  (public)  소스 + 릴리스 · 실행 파일  ← 앱이 확인하는 곳
 ```
 
-### 비공개 저장소인 경우
-
-공개 릴리스는 인증 없이 동작합니다. 저장소가 비공개면 GitHub 이 릴리스 조회에 `404` 를 돌려주므로
-읽기 권한(`contents: read`) 토큰을 **환경 변수**로 넘겨야 합니다.
+비공개로 두려면 받는 PC 마다 읽기 권한(`contents: read`) 토큰을 **환경 변수**로 넘겨야 합니다.
 
 ```powershell
 # 배포 시 한 번 (사용자가 앱에서 입력할 값이 아니다)

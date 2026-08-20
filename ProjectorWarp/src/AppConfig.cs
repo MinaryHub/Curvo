@@ -105,11 +105,12 @@ internal static class AppConfig
     /// 업데이트를 받아올 GitHub 저장소. 배포처를 옮길 때 <b>이 한 줄만</b> 바꾸면 된다.
     /// (사용자가 앱에서 입력하는 값이 아니다.)
     /// <para>
-    /// 소스 저장소와 분리한 <b>공개 배포 저장소</b>다. 비공개 저장소의 릴리스는 인증 없이 조회할 수 없어
-    /// 받는 PC 마다 토큰이 필요해지므로, 실행 파일만 공개 저장소에 올려 설정 없이 업데이트되게 한다.
+    /// 소스와 릴리스를 한 저장소에 둔다. <b>공개 저장소여야 한다</b> — 비공개 저장소의 릴리스는
+    /// 인증 없이 조회할 수 없어(GitHub 이 릴리스가 없는 것과 똑같이 404 를 준다) 받는 PC 마다
+    /// 토큰이 필요해진다.
     /// </para>
     /// </summary>
-    public const string UpdateRepository = "MinaryHub/ProjectorWarp";
+    public const string UpdateRepository = "MinaryHub/Curvo";
     /// <summary>GitHub 최신 릴리스 조회 주소. {0} 에 "owner/repo" 가 들어간다.</summary>
     public const string UpdateReleaseApiFormat = "https://api.github.com/repos/{0}/releases/latest";
     public const string UpdateApiMediaType = "application/vnd.github+json";

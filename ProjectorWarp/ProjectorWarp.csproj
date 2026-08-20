@@ -8,7 +8,7 @@
     <RootNamespace>ProjectorWarp</RootNamespace>
     <AssemblyName>ProjectorWarp</AssemblyName>
     <!-- 由대━???쒓렇(vX.Y.Z)? ??媛믪쓣 留욎떠???먮룞 ?낅뜲?댄듃媛 ??踰꾩쟾???뚯븘蹂몃떎 -->
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
