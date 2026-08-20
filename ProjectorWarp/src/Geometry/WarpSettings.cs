@@ -14,28 +14,6 @@ internal enum TestPattern
     BlackField = 6,
 }
 
-/// <summary>다각형 블랙 마스크(정규화 좌표).</summary>
-internal sealed class PolygonMask
-{
-    public List<Vector2> Vertices { get; init; } = new();
-
-    public PolygonMask Clone() => new() { Vertices = new List<Vector2>(Vertices) };
-
-    /// <summary>기본 사각형 마스크를 화면 중앙에 만든다.</summary>
-    public static PolygonMask CreateDefault()
-    {
-        var mask = new PolygonMask();
-        mask.Vertices.AddRange(new[]
-        {
-            new Vector2(0.35f, 0.35f),
-            new Vector2(0.65f, 0.35f),
-            new Vector2(0.65f, 0.65f),
-            new Vector2(0.35f, 0.65f),
-        });
-        return mask;
-    }
-}
-
 /// <summary>
 /// 기하 보정 + 색상 보정 전체 상태. 프리셋 저장 단위이자 실행 취소 스냅샷 단위.
 /// 모든 좌표는 출력 화면 기준 정규화(0~1) 좌표이다.
@@ -62,9 +40,7 @@ internal sealed class WarpSettings
     }
 
     // ---- 3단계: 마스킹 ----------------------------------------------------
-    public bool MaskEnabled { get; set; }
 
-    public List<PolygonMask> Masks { get; private set; } = new();
 
     // ---- 색상 보정 --------------------------------------------------------
     public bool ColorEnabled { get; set; }
@@ -108,7 +84,6 @@ internal sealed class WarpSettings
     {
         CornerPoints = CreateDefaultCorners();
         Grid.Reset();
-        Masks.Clear();
     }
 
     public WarpSettings Clone()
@@ -118,7 +93,6 @@ internal sealed class WarpSettings
             CornerPinEnabled = CornerPinEnabled,
             BezierEnabled = BezierEnabled,
             Tessellation = Tessellation,
-            MaskEnabled = MaskEnabled,
             ColorEnabled = ColorEnabled,
             Brightness = Brightness,
             Contrast = Contrast,
@@ -132,7 +106,6 @@ internal sealed class WarpSettings
             CornerPoints = (Vector2[])CornerPoints.Clone(),
             Grid = Grid.Clone(),
         };
-        clone.Masks = Masks.Select(m => m.Clone()).ToList();
         return clone;
     }
 
@@ -144,8 +117,6 @@ internal sealed class WarpSettings
         BezierEnabled = other.BezierEnabled;
         Grid = other.Grid.Clone();
         Tessellation = other.Tessellation;
-        MaskEnabled = other.MaskEnabled;
-        Masks = other.Masks.Select(m => m.Clone()).ToList();
         ColorEnabled = other.ColorEnabled;
         Brightness = other.Brightness;
         Contrast = other.Contrast;

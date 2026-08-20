@@ -25,16 +25,9 @@ internal sealed class OverlayState
     /// <summary>선택된 코너 핀 인덱스(-1 = 없음).</summary>
     public int SelectedCorner { get; set; } = -1;
 
-    /// <summary>선택된 마스크 인덱스(-1 = 없음).</summary>
-    public int SelectedMask { get; set; } = -1;
-
-    /// <summary>선택된 마스크 꼭짓점 인덱스(-1 = 없음).</summary>
-    public int SelectedMaskVertex { get; set; } = -1;
-
     public void ClearSelection()
     {
         SelectedControlPoint = -1;
         SelectedCorner = -1;
-        SelectedMaskVertex = -1;
     }
 }

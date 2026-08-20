@@ -45,8 +45,6 @@ internal sealed class WarpRenderer : IDisposable
     private static readonly Vector4 HandleColor = new(0.15f, 0.85f, 1.0f, 0.95f);
     private static readonly Vector4 SelectedHandleColor = new(1.0f, 0.35f, 0.2f, 1.0f);
     private static readonly Vector4 CornerHandleColor = new(0.4f, 1.0f, 0.4f, 0.95f);
-    private static readonly Vector4 MaskColor = new(0.0f, 0.0f, 0.0f, 1.0f);
-    private static readonly Vector4 MaskOutlineColor = new(1.0f, 0.4f, 0.9f, 0.9f);
 
     private readonly GraphicsDevice _graphics;
     private readonly OverlayBuilder _overlayBuilder = new();
@@ -178,9 +176,6 @@ internal sealed class WarpRenderer : IDisposable
 
         DrawWarpedSource(context, settings, window);
 
-        if (settings.MaskEnabled && settings.Masks.Count > 0)
-            DrawMasks(context, settings, window);
-
         if (overlay.EditMode)
             DrawOverlay(context, settings, overlay, window);
 
@@ -214,15 +209,6 @@ internal sealed class WarpRenderer : IDisposable
         context.PSSetShaderResource(0, null!);
     }
 
-    private void DrawMasks(ID3D11DeviceContext context, WarpSettings settings, OutputWindow window)
-    {
-        _overlayBuilder.Begin(window.Width, window.Height);
-        foreach (PolygonMask mask in settings.Masks)
-            _overlayBuilder.AddPolygon(mask.Vertices, MaskColor);
-
-        DrawOverlayBuffer(context, _opaqueBlend);
-    }
-
     private void DrawOverlay(ID3D11DeviceContext context, WarpSettings settings, OverlayState overlay, OutputWindow window)
     {
         _overlayBuilder.Begin(window.Width, window.Height);
@@ -252,25 +238,6 @@ internal sealed class WarpRenderer : IDisposable
         {
             _overlayBuilder.AddLine(new Vector2(0, 0), new Vector2(1, 1), DiagonalColor, lineWidth);
             _overlayBuilder.AddLine(new Vector2(1, 0), new Vector2(0, 1), DiagonalColor, lineWidth);
-        }
-
-        if (settings.MaskEnabled)
-        {
-            for (int maskIndex = 0; maskIndex < settings.Masks.Count; maskIndex++)
-            {
-                PolygonMask mask = settings.Masks[maskIndex];
-                bool isSelectedMask = maskIndex == overlay.SelectedMask;
-                for (int i = 0; i < mask.Vertices.Count; i++)
-                {
-                    Vector2 current = mask.Vertices[i];
-                    Vector2 next = mask.Vertices[(i + 1) % mask.Vertices.Count];
-                    _overlayBuilder.AddLine(current, next, MaskOutlineColor, lineWidth);
-                    bool isSelectedVertex = isSelectedMask && i == overlay.SelectedMaskVertex;
-                    _overlayBuilder.AddHandle(current,
-                        isSelectedVertex ? SelectedHandleColor : MaskOutlineColor,
-                        AppConfig.HandleRadiusPixels * 0.8f);
-                }
-            }
         }
 
         if (settings.CornerPinEnabled)

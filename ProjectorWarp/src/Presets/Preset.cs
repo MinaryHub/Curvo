@@ -24,7 +24,6 @@ internal sealed class Preset
 
     public PresetEdgeBlend EdgeBlend { get; set; } = new();
 
-    public PresetMasks Masks { get; set; } = new();
 
     /// <summary>앱 내부 재생(동영상/슬라이드) 설정.</summary>
     public PresetMedia Media { get; set; } = new();
@@ -72,11 +71,6 @@ internal sealed class Preset
                 Bottom = settings.EdgeBlendBottom,
                 Gamma = settings.EdgeBlendGamma,
             },
-            Masks = new PresetMasks
-            {
-                Enabled = settings.MaskEnabled,
-                Polygons = settings.Masks.Select(m => m.Vertices.Select(ToPair).ToList()).ToList(),
-            },
         };
         if (media is not null) preset.Media = media;
         return preset;
@@ -111,15 +105,6 @@ internal sealed class Preset
         settings.EdgeBlendTop = EdgeBlend.Top;
         settings.EdgeBlendBottom = EdgeBlend.Bottom;
         settings.EdgeBlendGamma = EdgeBlend.Gamma;
-
-        settings.MaskEnabled = Masks.Enabled;
-        settings.Masks.Clear();
-        foreach (List<float[]> polygon in Masks.Polygons)
-        {
-            var mask = new PolygonMask();
-            mask.Vertices.AddRange(polygon.Select(ToVector));
-            if (mask.Vertices.Count >= 3) settings.Masks.Add(mask);
-        }
     }
 
     private static float[] ToPair(Vector2 point) => new[] { point.X, point.Y };
@@ -220,11 +205,4 @@ internal sealed class PresetMedia
 
     [JsonIgnore]
     public bool IsActive => (IsVideo || IsSlides) && !string.IsNullOrWhiteSpace(Path);
-}
-
-internal sealed class PresetMasks
-{
-    public bool Enabled { get; set; }
-
-    public List<List<float[]>> Polygons { get; set; } = new();
 }

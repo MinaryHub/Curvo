@@ -92,23 +92,22 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 ## 사용 순서
 
 1. **소스 선택** — 두 가지 탭 중 하나를 씁니다.
-   - **[내장 재생]** — [동영상 열기] 또는 [슬라이드 열기] 로 파일을 고릅니다(권장, 기본 탭).
-   - **[창]** — 실행 중인 창을 캡처합니다. 고르면 상단에 실시간 미리보기가 표시됩니다.
-2. **출력 모니터 선택** 후 **[출력 시작]** — 해당 모니터에 borderless 전체화면 창이 열리고
-   **선택한 소스가 함께 시작됩니다.** 화면 표시 여부는 [출력 시작] / [출력 중지] 두 버튼만으로 결정됩니다.
+   - **[Built-in playback]** — [Open video] 또는 [Open slides] 로 파일을 고릅니다(권장, 기본 탭).
+   - **[Window]** — 실행 중인 창을 캡처합니다. 고르면 상단에 실시간 미리보기가 표시됩니다.
+2. **출력 모니터 선택** 후 **[Start output]** — 해당 모니터에 borderless 전체화면 창이 열리고
+   **선택한 소스가 함께 시작됩니다.** 화면 표시 여부는 [Start output] / [Stop output] 두 버튼만으로 결정됩니다.
    출력 중에 탭이나 창 선택을 바꾸면 소스가 바로 전환됩니다.
 3. **F1** 로 편집 모드를 켜고 제어점을 드래그해 곡면을 맞춥니다. **F2** 로 테스트 패턴을 띄우면 정렬이 쉽습니다.
-4. **[현재 설정 저장]** 또는 **Ctrl+S** 로 저장합니다. 앱을 끄면 마지막 상태가 자동 저장되어 다음 실행 때 복원됩니다.
-5. 매번 같은 환경에서 쓴다면 **[8. 저장 · 자동 시작]** 에서 로그온 자동 실행과 자동 투사 시작을 켜 두면
+4. **[Save current setup]** 또는 **Ctrl+S** 로 저장합니다. 앱을 끄면 마지막 상태가 자동 저장되어 다음 실행 때 복원됩니다.
+5. 매번 같은 환경에서 쓴다면 **[8. Saving · auto-start]** 에서 로그온 자동 실행과 자동 투사 시작을 켜 두면
    PC 를 켜는 것만으로 투사가 시작됩니다.
 
-### 기하 보정 3단계
+### 기하 보정 2단계
 
 | 단계 | 내용 |
 |---|---|
 | 1. 코너 핀 / 키스톤 | 4개 모서리를 드래그해 3×3 호모그래피를 산출. 텍스처 좌표를 투영 좌표 `(u·w, v·w, w)` 로 전달해 원근 보간 왜곡을 제거합니다. |
 | 2. 베지어 곡면 | 기본 4×4(16개) 제어점의 bicubic 곡면. 3×3 ~ 6×6 격자, 테셀레이션 16×16 ~ 128×128(기본 64×64) 조절 가능. |
-| 3. 마스킹 | 다각형 블랙 마스크를 추가/삭제. 편집 모드에서 꼭짓점 드래그, 오른쪽 클릭으로 꼭짓점 삭제. |
 
 격자 크기를 **늘릴 때는 차수 상승(degree elevation)** 으로 곡면 형상을 그대로 보존합니다.
 줄일 때는 기존 곡면을 새 격자 위치에서 샘플링하므로 형상이 근사됩니다.
@@ -117,14 +116,14 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ## 내장 재생 (외부 프로그램 없이)
 
-[내장 재생] 탭에서 파일을 열면 앱이 직접 디코딩·표시합니다. 플레이어나 PowerPoint 창을 캡처할 필요가 없어
+[Built-in playback] 탭에서 파일을 열면 앱이 직접 디코딩·표시합니다. 플레이어나 PowerPoint 창을 캡처할 필요가 없어
 창 제목 변화, 렌더러 설정, 창 크기 변경 같은 변수에서 자유롭습니다.
 
 ### 동영상
 
 - Media Foundation Media Engine 으로 **하드웨어 디코딩**합니다. Windows 에서 재생되는 코덱이면 그대로 재생됩니다
   (MP4/H.264·H.265, MOV, WMV, AVI, MKV, WebM 등 — 설치된 코덱에 따름).
-- 오디오도 같이 재생됩니다. 음량은 컨트롤 패널의 [음량] 슬라이더로 조절합니다.
+- 오디오도 같이 재생됩니다. 음량은 컨트롤 패널의 [Volume] 슬라이더로 조절합니다.
 - 반복 재생, 위치 이동(시크), 일시정지를 지원합니다.
 
 ### 슬라이드 (PPT · PDF · 이미지)
@@ -143,14 +142,14 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ### 재생 제어
 
-컨트롤 패널의 [재생 제어] 그룹 또는 출력 창 단축키로 조작합니다.
+컨트롤 패널의 [Playback] 그룹 또는 출력 창 단축키로 조작합니다.
 
 | 조작 | 단축키 |
 |---|---|
 | 재생 / 일시정지 (슬라이드는 다음 장) | `Space` |
 | 이전 / 다음 슬라이드 | `PgUp` / `PgDn` |
-| 처음부터 | 컨트롤 패널 [처음부터] |
-| 자동 전환 | [자동 전환] 슬라이더 (0 = 수동, 최대 120초) |
+| 처음부터 | 컨트롤 패널 [Restart] |
+| 자동 전환 | [Auto advance] 슬라이더 (0 = 수동, 최대 120초) |
 
 ---
 
@@ -167,11 +166,10 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 | `Ctrl+Z` / `Ctrl+Y` | 실행 취소 / 다시 실행 |
 | `Esc` | 전체화면 해제 (창 모드 ↔ 전체화면 전환) |
 | 방향키 | 선택한 점 1px 이동 (`Shift` 함께 누르면 10px) |
-| `M` / `Del` | 마스크 추가 / 선택 마스크 삭제 |
 | `Space` | 재생 / 일시정지 (슬라이드는 다음 장) |
 | `PgUp` / `PgDn` | 이전 / 다음 슬라이드 |
 
-마우스: 왼쪽 드래그로 제어점·코너·마스크 꼭짓점 이동, 오른쪽 클릭으로 마스크 꼭짓점 삭제.
+마우스: 왼쪽 드래그로 제어점과 코너를 옮깁니다.
 
 ---
 
@@ -189,7 +187,6 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
   "bezier": { "enabled": true, "gridSize": 4, "tessellation": 64, "controlPoints": [[0,0], "... 16개"] },
   "color": { "enabled": false, "brightness": 1.0, "contrast": 1.0, "gamma": 1.0 },
   "edgeBlend": { "enabled": false, "left": 0.0, "right": 0.0, "top": 0.0, "bottom": 0.0, "gamma": 2.2 },
-  "masks": { "enabled": false, "polygons": [] },
   "media": { "kind": "video", "path": "D:\\loop.mp4", "loop": true, "volume": 0.8, "slideIntervalSeconds": 0 }
 }
 ```
@@ -207,11 +204,11 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 | 파일 | 내용 | 저장 시점 |
 |---|---|---|
-| `%AppData%\ProjectorWarp\last-session.json` | 보정값 · 캡처 소스 · 출력 모니터 | 앱 종료 시 자동, [현재 설정 저장] 클릭 시 |
+| `%AppData%\ProjectorWarp\last-session.json` | 보정값 · 캡처 소스 · 출력 모니터 | 앱 종료 시 자동, [Save current setup] 클릭 시 |
 | `%AppData%\ProjectorWarp\app-settings.json` | 자동 시작 옵션, 항상 위 여부(기본 꺼짐), 시작 프리셋 경로 | 옵션을 바꿀 때마다 즉시 |
 | 임의 위치 `*.json` | 프리셋 (Ctrl+S 로 다른 이름으로 저장) | 수동 |
 
-**[현재 설정 저장]** 은 보정값을 *시작 시 사용할 프리셋* 으로 지정된 파일에 씁니다.
+**[Save current setup]** 은 보정값을 *시작 시 사용할 프리셋* 으로 지정된 파일에 씁니다.
 지정된 프리셋이 없으면 `last-session.json` 에 씁니다. 즉 저장 → 재실행하면 그대로 복원됩니다.
 
 ### 자동 시작 옵션
@@ -228,7 +225,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 1. 로그온 자동 실행으로 시작된 경우(`--autostart`) 디스플레이와 대상 앱이 준비될 시간을 두기 위해 **5초** 기다립니다.
 2. 2초 간격으로 목록을 새로 읽어 저장된 출력 모니터 → 캡처 소스 순으로 연결합니다.
 3. 재시도 시간이 지나도 대상을 못 찾으면 중단하고 상태 표시줄에 이유를 표시합니다.
-4. 도중에 사용자가 직접 [출력 시작]/[출력 중지] 를 누르거나 [자동 시작 취소] 를 누르면 재시도를 멈춥니다.
+4. 도중에 사용자가 직접 [Start output]/[Stop output] 를 누르거나 [Cancel auto-start] 를 누르면 재시도를 멈춥니다.
 
 > 자동 실행 경로는 앱을 다른 폴더로 옮기면 다음 실행 때 자동으로 갱신됩니다.
 > 단일 실행파일(`publish\ProjectorWarp.exe`)을 고정 위치에 두고 등록하는 것을 권장합니다.
@@ -237,7 +234,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 ## 버전 · 자동 업데이트
 
-컨트롤 패널 제목과 **[9. 버전 · 업데이트]** 에 현재 버전이 표시됩니다.
+컨트롤 패널 제목과 **[9. Version · updates]** 에 현재 버전이 표시됩니다.
 버전 값은 `ProjectorWarp.csproj` 의 `<Version>` 이고, **GitHub 릴리스 태그와 이 값을 맞춰야** 새 버전으로 인식됩니다.
 
 ### 사용하는 쪽
@@ -246,7 +243,7 @@ dotnet run --project tests\ProjectorWarp.Checks -- "D:\sample.mp4" "D:\slides"
 
 1. `앱을 시작할 때 새 버전 확인` 을 켜 두면 시작 5초 뒤에 조용히 확인하고, 새 버전이 있을 때만 알립니다.
    패널에는 확인 대상 저장소가 읽기 전용으로 표시됩니다.
-2. 새 버전이 있으면 **[설치 후 재시작]** 버튼이 나타납니다. 누르면 내려받아 교체하고 앱을 다시 시작합니다.
+2. 새 버전이 있으면 **[Install and restart]** 버튼이 나타납니다. 누르면 내려받아 교체하고 앱을 다시 시작합니다.
    투사 중에 저절로 재시작되는 일은 없습니다 — 누르지 않으면 아무 일도 일어나지 않습니다.
 
 ### 배포하는 쪽
@@ -330,7 +327,7 @@ setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
 
 ## 후원
 
-컨트롤 패널 **[10. 후원]** 에서 GitHub Sponsors 페이지를 열 수 있습니다.
+컨트롤 패널 **[10. Sponsor]** 에서 GitHub Sponsors 페이지를 열 수 있습니다.
 
 | 항목 | 값 |
 |---|---|
@@ -339,8 +336,8 @@ setx PROJECTORWARP_GITHUB_TOKEN "github_pat_..."
 | 앱 버튼이 여는 주소 | 위 주소 + `?frequency=one-time` (정기 결제 대신 금액 입력 화면으로 바로 이동) |
 | 설정 위치 | `src/AppConfig.cs` 의 `SponsorUrl` · `SponsorAccount` |
 
-앱은 **결제에 관여하지 않습니다.** [후원하기] 는 기본 브라우저로 위 페이지를 열 뿐이고,
-브라우저가 열리지 않는 환경(키오스크 등)을 위해 [링크 복사] 도 함께 둡니다.
+앱은 **결제에 관여하지 않습니다.** [Sponsor on GitHub] 는 기본 브라우저로 위 페이지를 열 뿐이고,
+브라우저가 열리지 않는 환경(키오스크 등)을 위해 [Copy link] 도 함께 둡니다.
 저장소 페이지의 [Sponsor] 버튼은 `.github/FUNDING.yml` 이 담당합니다.
 
 > 결제 화면의 `Sponsor as` 선택기는 GitHub 이 그리는 부분이라 앱에서 숨길 수 없습니다.

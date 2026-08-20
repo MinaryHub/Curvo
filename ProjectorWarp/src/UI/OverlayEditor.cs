@@ -16,7 +16,6 @@ internal sealed class OverlayEditor
     private const int VirtualKeyR = 0x52;
     private const int VirtualKeyY = 0x59;
     private const int VirtualKeyZ = 0x5A;
-    private const int VirtualKeyM = 0x4D;
     private const int VirtualKeySpace = 0x20;
     private const int VirtualKeyPageUp = 0x21;
     private const int VirtualKeyPageDown = 0x22;
@@ -30,14 +29,12 @@ internal sealed class OverlayEditor
         None,
         Corner,
         ControlPoint,
-        MaskVertex,
     }
 
     private readonly ProjectionEngine _engine;
     private OutputWindow? _window;
     private DragKind _drag = DragKind.None;
     private int _dragIndex = -1;
-    private int _dragMaskIndex = -1;
 
     public OverlayEditor(ProjectionEngine engine) => _engine = engine;
 
@@ -77,15 +74,10 @@ internal sealed class OverlayEditor
     {
         if (!Overlay.EditMode || _window is null) return;
 
-        if (button == OutputMouseButton.Right)
-        {
-            TryDeleteMaskVertex(point);
-            return;
-        }
+        if (button != OutputMouseButton.Left) return;
 
         if (TryBeginCornerDrag(point)) return;
-        if (TryBeginControlPointDrag(point)) return;
-        TryBeginMaskVertexDrag(point);
+        TryBeginControlPointDrag(point);
     }
 
     private bool TryBeginCornerDrag(Vector2 point)
@@ -128,50 +120,6 @@ internal sealed class OverlayEditor
         return true;
     }
 
-    private bool TryBeginMaskVertexDrag(Vector2 point)
-    {
-        if (!Settings.MaskEnabled) return false;
-
-        for (int maskIndex = 0; maskIndex < Settings.Masks.Count; maskIndex++)
-        {
-            PolygonMask mask = Settings.Masks[maskIndex];
-            int vertexIndex = FindNearest(mask.Vertices, point);
-            if (vertexIndex < 0) continue;
-
-            _engine.History.Push(Settings);
-            _drag = DragKind.MaskVertex;
-            _dragIndex = vertexIndex;
-            _dragMaskIndex = maskIndex;
-            Overlay.ClearSelection();
-            Overlay.SelectedMask = maskIndex;
-            Overlay.SelectedMaskVertex = vertexIndex;
-            _engine.RequestRender();
-            StateChanged?.Invoke();
-            return true;
-        }
-        return false;
-    }
-
-    private void TryDeleteMaskVertex(Vector2 point)
-    {
-        if (!Settings.MaskEnabled) return;
-
-        for (int maskIndex = 0; maskIndex < Settings.Masks.Count; maskIndex++)
-        {
-            PolygonMask mask = Settings.Masks[maskIndex];
-            int vertexIndex = FindNearest(mask.Vertices, point);
-            if (vertexIndex < 0) continue;
-            if (mask.Vertices.Count <= 3) return; // 삼각형 아래로는 줄이지 않는다.
-
-            _engine.History.Push(Settings);
-            mask.Vertices.RemoveAt(vertexIndex);
-            Overlay.SelectedMaskVertex = -1;
-            _engine.RequestRender();
-            StateChanged?.Invoke();
-            return;
-        }
-    }
-
     private void OnMouseMove(Vector2 point)
     {
         if (_drag == DragKind.None || _window is null) return;
@@ -185,11 +133,6 @@ internal sealed class OverlayEditor
             case DragKind.ControlPoint:
                 Settings.Grid[_dragIndex] = Clamp(ToWarpSpace(point));
                 break;
-
-            case DragKind.MaskVertex:
-                if (_dragMaskIndex >= 0 && _dragMaskIndex < Settings.Masks.Count)
-                    Settings.Masks[_dragMaskIndex].Vertices[_dragIndex] = Clamp(point);
-                break;
         }
 
         _engine.InvalidateGeometry();
@@ -200,7 +143,6 @@ internal sealed class OverlayEditor
         if (button != OutputMouseButton.Left) return;
         _drag = DragKind.None;
         _dragIndex = -1;
-        _dragMaskIndex = -1;
     }
 
     // ---- 키보드 ----------------------------------------------------------
@@ -250,8 +192,6 @@ internal sealed class OverlayEditor
             case Win32.VK_RIGHT: Nudge(1, 0); return;
             case Win32.VK_UP: Nudge(0, -1); return;
             case Win32.VK_DOWN: Nudge(0, 1); return;
-            case Win32.VK_DELETE: DeleteSelectedMask(); return;
-            case VirtualKeyM: AddMask(); return;
 
             // 내장 재생 제어
             case VirtualKeySpace: _engine.ToggleMediaPlayback(); return;
@@ -276,27 +216,6 @@ internal sealed class OverlayEditor
         Notify();
     }
 
-    public void AddMask()
-    {
-        _engine.History.Push(Settings);
-        Settings.MaskEnabled = true;
-        Settings.Masks.Add(PolygonMask.CreateDefault());
-        Overlay.SelectedMask = Settings.Masks.Count - 1;
-        Notify();
-    }
-
-    public void DeleteSelectedMask()
-    {
-        int index = Overlay.SelectedMask;
-        if (index < 0 || index >= Settings.Masks.Count) return;
-
-        _engine.History.Push(Settings);
-        Settings.Masks.RemoveAt(index);
-        Overlay.SelectedMask = Settings.Masks.Count > 0 ? 0 : -1;
-        Overlay.SelectedMaskVertex = -1;
-        Notify();
-    }
-
     private void Nudge(int directionX, int directionY)
     {
         if (_window is null) return;
@@ -314,14 +233,6 @@ internal sealed class OverlayEditor
         {
             _engine.History.Push(Settings);
             Settings.Grid[Overlay.SelectedControlPoint] = Clamp(Settings.Grid[Overlay.SelectedControlPoint] + delta);
-        }
-        else if (Overlay.SelectedMask >= 0 && Overlay.SelectedMaskVertex >= 0 &&
-                 Overlay.SelectedMask < Settings.Masks.Count)
-        {
-            PolygonMask mask = Settings.Masks[Overlay.SelectedMask];
-            if (Overlay.SelectedMaskVertex >= mask.Vertices.Count) return;
-            _engine.History.Push(Settings);
-            mask.Vertices[Overlay.SelectedMaskVertex] = Clamp(mask.Vertices[Overlay.SelectedMaskVertex] + delta);
         }
         else
         {

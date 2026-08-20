@@ -221,22 +221,8 @@
           </StackPanel>
         </GroupBox>
 
-        <!-- 4. 마스킹 -->
-        <GroupBox Header="4. Masking (optional)">
-          <StackPanel>
-            <CheckBox x:Name="MaskEnableCheck" Content="Black masks"
-                      Checked="OnGeometryToggleChanged" Unchecked="OnGeometryToggleChanged" />
-            <WrapPanel Margin="0,6,0,0">
-              <Button x:Name="AddMaskButton" Content="Add mask (M)" Click="OnAddMaskClick" />
-              <Button x:Name="DeleteMaskButton" Content="Delete selected mask (Del)" Click="OnDeleteMaskClick" />
-            </WrapPanel>
-            <TextBlock Text="In edit mode, drag a vertex to move it and right-click one to delete it."
-                       Style="{StaticResource Hint}" Margin="0,6,0,0" />
-          </StackPanel>
-        </GroupBox>
-
-        <!-- 5. 색상 보정 -->
-        <GroupBox Header="5. Colour (optional)">
+        <!-- 4. 색상 보정 -->
+        <GroupBox Header="4. Colour (optional)">
           <StackPanel>
             <CheckBox x:Name="ColorEnableCheck" Content="Colour correction"
                       Checked="OnColorChanged" Unchecked="OnColorChanged" />
@@ -273,8 +259,8 @@
           </StackPanel>
         </GroupBox>
 
-        <!-- 6. 엣지 블렌딩 -->
-        <GroupBox Header="6. Edge blending (multi-projector)">
+        <!-- 5. 엣지 블렌딩 -->
+        <GroupBox Header="5. Edge blending (multi-projector)">
           <StackPanel>
             <CheckBox x:Name="EdgeBlendCheck" Content="Edge blending"
                       Checked="OnEdgeBlendChanged" Unchecked="OnEdgeBlendChanged" />
@@ -325,16 +311,16 @@
           </StackPanel>
         </GroupBox>
 
-        <!-- 7. 프리셋 -->
-        <GroupBox Header="7. Presets">
+        <!-- 6. 프리셋 -->
+        <GroupBox Header="6. Presets">
           <WrapPanel>
             <Button x:Name="SavePresetButton" Content="Save as (Ctrl+S)" Click="OnSavePresetClick" />
             <Button x:Name="OpenPresetButton" Content="Open (Ctrl+O)" Click="OnOpenPresetClick" />
           </WrapPanel>
         </GroupBox>
 
-        <!-- 8. 설정 저장 / 자동 시작 -->
-        <GroupBox Header="8. Saving · auto-start">
+        <!-- 7. 설정 저장 / 자동 시작 -->
+        <GroupBox Header="7. Saving · auto-start">
           <StackPanel>
             <Button x:Name="SaveConfigurationButton" Content="Save current setup" Click="OnSaveConfigurationClick"
                     HorizontalAlignment="Left" />
@@ -372,8 +358,8 @@
           </StackPanel>
         </GroupBox>
 
-        <!-- 9. 버전 · 업데이트 -->
-        <GroupBox Header="9. Version · updates">
+        <!-- 8. 버전 · 업데이트 -->
+        <GroupBox Header="8. Version · updates">
           <StackPanel>
             <TextBlock x:Name="VersionText" Text="Version —" FontWeight="SemiBold" />
 
@@ -393,8 +379,8 @@
           </StackPanel>
         </GroupBox>
 
-        <!-- 10. 후원 -->
-        <GroupBox Header="10. Sponsor">
+        <!-- 9. 후원 -->
+        <GroupBox Header="9. Sponsor">
           <StackPanel>
             <TextBlock Style="{StaticResource Hint}"
                        Text="If ProjectorWarp earned its place in your setup, consider sponsoring it. Support goes into the work that curved-surface projection actually needs." />

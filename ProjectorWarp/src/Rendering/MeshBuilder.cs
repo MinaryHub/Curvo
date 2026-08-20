@@ -184,18 +184,6 @@ internal sealed class OverlayBuilder
         _vertices.Add(new OverlayVertex(d, color));
     }
 
-    /// <summary>단순 다각형을 삼각형 팬으로 채운다(볼록/약한 오목 다각형 대상).</summary>
-    public void AddPolygon(IReadOnlyList<Vector2> polygon, Vector4 color)
-    {
-        if (polygon.Count < 3) return;
-        for (int i = 1; i < polygon.Count - 1; i++)
-        {
-            _vertices.Add(new OverlayVertex(polygon[0], color));
-            _vertices.Add(new OverlayVertex(polygon[i], color));
-            _vertices.Add(new OverlayVertex(polygon[i + 1], color));
-        }
-    }
-
     private Vector2 ToPixels(Vector2 normalized) => new(normalized.X * _pixelWidth, normalized.Y * _pixelHeight);
 
     private Vector2 ToNormalized(Vector2 pixels) => new(pixels.X / _pixelWidth, pixels.Y / _pixelHeight);

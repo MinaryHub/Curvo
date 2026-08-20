@@ -312,7 +312,6 @@ public partial class MainWindow : Window
         if (_suppressSync) return;
         Settings.CornerPinEnabled = CornerPinCheck.IsChecked == true;
         Settings.BezierEnabled = BezierCheck.IsChecked == true;
-        Settings.MaskEnabled = MaskEnableCheck.IsChecked == true;
         _engine.InvalidateGeometry();
     }
 
@@ -403,18 +402,6 @@ public partial class MainWindow : Window
         if (!_engine.History.Redo(Settings)) return;
         Overlay.ClearSelection();
         _engine.InvalidateGeometry();
-        SyncUiFromState();
-    }
-
-    private void OnAddMaskClick(object sender, RoutedEventArgs e)
-    {
-        _editor.AddMask();
-        SyncUiFromState();
-    }
-
-    private void OnDeleteMaskClick(object sender, RoutedEventArgs e)
-    {
-        _editor.DeleteSelectedMask();
         SyncUiFromState();
     }
 
@@ -638,7 +625,6 @@ public partial class MainWindow : Window
         {
             CornerPinCheck.IsChecked = Settings.CornerPinEnabled;
             BezierCheck.IsChecked = Settings.BezierEnabled;
-            MaskEnableCheck.IsChecked = Settings.MaskEnabled;
             TessellationSlider.Value = Settings.Tessellation;
             GridSizeCombo.SelectedIndex = Settings.Grid.GridSize - AppConfig.MinGridSize;
 
@@ -1280,7 +1266,7 @@ public partial class MainWindow : Window
             _stagedUpdatePath = null;
             ApplyUpdateButton.Visibility = Visibility.Visible;
             UpdateStatusText.Text = FormatReleaseSummary(release);
-            StatusText.Text = $"Version {release.Version} is available. Install it under 9. Version · updates.";
+            StatusText.Text = $"Version {release.Version} is available. Install it under 8. Version · updates.";
         }
         catch (Exception ex)
         {

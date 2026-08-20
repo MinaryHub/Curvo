@@ -1,14 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <!-- WinRT(Windows.Graphics.Capture) 투영을 사용하기 위해 Windows SDK TFM 지정 -->
+    <!-- WinRT(Windows.Graphics.Capture) ?ъ쁺???ъ슜?섍린 ?꾪빐 Windows SDK TFM 吏??-->
     <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <RootNamespace>ProjectorWarp</RootNamespace>
     <AssemblyName>ProjectorWarp</AssemblyName>
-    <!-- 릴리스 태그(vX.Y.Z)와 이 값을 맞춰야 자동 업데이트가 새 버전을 알아본다 -->
-    <Version>1.1.0</Version>
+    <!-- 由대━???쒓렇(vX.Y.Z)? ??媛믪쓣 留욎떠???먮룞 ?낅뜲?댄듃媛 ??踰꾩쟾???뚯븘蹂몃떎 -->
+    <Version>1.2.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -19,7 +19,7 @@
     <ApplicationIcon>assets\ProjectorWarp.ico</ApplicationIcon>
     <InvariantGlobalization>false</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <!-- 단일 실행파일(self-contained) 배포 기본값 -->
+    <!-- ?⑥씪 ?ㅽ뻾?뚯씪(self-contained) 諛고룷 湲곕낯媛?-->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- 검증용 콘솔 프로젝트와 아이콘 생성기는 앱 어셈블리에 포함하지 않는다 -->
+    <!-- 寃利앹슜 肄섏넄 ?꾨줈?앺듃? ?꾩씠肄??앹꽦湲곕뒗 ???댁뀍釉붾━???ы븿?섏? ?딅뒗??-->
     <Compile Remove="tests\**" />
     <Compile Remove="tools\**" />
     <Page Remove="tests\**" />
@@ -38,12 +38,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- WindowsDesktop SDK 의 암시적 using 목록에는 System.IO 가 빠져 있어 직접 추가한다 -->
+    <!-- WindowsDesktop SDK ???붿떆??using 紐⑸줉?먮뒗 System.IO 媛 鍮좎졇 ?덉뼱 吏곸젒 異붽??쒕떎 -->
     <Using Include="System.IO" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 창 아이콘(Window.Icon)으로 쓰기 위해 리소스로도 포함한다 -->
+    <!-- 李??꾩씠肄?Window.Icon)?쇰줈 ?곌린 ?꾪빐 由ъ냼?ㅻ줈???ы븿?쒕떎 -->
     <Resource Include="assets\ProjectorWarp.ico" />
   </ItemGroup>
 
@@ -59,7 +59,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- HLSL 원본은 리소스로 포함하고 실행 시 D3DCompile 로 컴파일한다 -->
+    <!-- HLSL ?먮낯? 由ъ냼?ㅻ줈 ?ы븿?섍퀬 ?ㅽ뻾 ??D3DCompile 濡?而댄뙆?쇳븳??-->
     <EmbeddedResource Include="src\Rendering\Shaders\*.hlsl" />
     <None Remove="src\Rendering\Shaders\*.hlsl" />
   </ItemGroup>
