@@ -37,6 +37,8 @@ internal sealed class ProjectionEngine : IDisposable
     private SlideDeck? _slides;
     private Thread? _videoThread;
     private volatile bool _videoLoopRunning;
+    /// <summary>소스 프레임과 무관하게 다시 그려야 할 변경(설정·오버레이·기하)이 있는지.</summary>
+    private volatile bool _renderRequested = true;
     private bool _recreating;
     private bool _disposed;
 
@@ -67,6 +69,9 @@ internal sealed class ProjectionEngine : IDisposable
     public VideoPlayer? Video => _video;
 
     public SlideDeck? Slides => _slides;
+
+    /// <summary>지금까지 출력 창에 그린 프레임 수(검증용).</summary>
+    public long RenderCount => _renderer?.RenderCount ?? 0;
 
     /// <summary>내부 미디어(동영상/슬라이드)가 활성 상태인지.</summary>
     public bool IsMediaActive =>
@@ -199,15 +204,34 @@ internal sealed class ProjectionEngine : IDisposable
     /// <summary>편집 중 등 프레임이 오지 않을 때 즉시 다시 그린다.</summary>
     public void RequestRender()
     {
+        // 동영상 루프는 이 플래그를 보고 그리므로, 루프가 도는 중에도 반드시 표시해 둔다.
+        _renderRequested = true;
         if (_graphics is null || _renderer is null || _window is null) return;
-        // 동영상 재생 중에는 전용 루프가 매 프레임 다시 그리므로 중복 렌더를 피한다.
         if (_videoLoopRunning) return;
-        lock (_graphics.RenderLock)
+        RenderOnce();
+    }
+
+    /// <summary>
+    /// 한 프레임을 그리고 화면에 내보낸다.
+    /// vsync Present 는 최대 한 프레임 동안 블록되므로 <b>렌더 락을 놓은 뒤에</b> 호출한다.
+    /// 락 안에서 하면 캡처 스레드와 UI 스레드가 그만큼 함께 멈춘다.
+    /// </summary>
+    private void RenderOnce()
+    {
+        GraphicsDevice? graphics = _graphics;
+        if (graphics is null) return;
+
+        OutputWindow? window;
+        lock (graphics.RenderLock)
         {
-            if (_renderer is null || _window is null) return;
+            window = _window;
+            if (_renderer is null || window is null) return;
+            _renderRequested = false;
             _renderer.CurrentPattern = Overlay.Pattern;
-            _renderer.Render(_window, Settings, Overlay);
+            _renderer.Render(window, Settings, Overlay);
         }
+
+        window.Present(verticalSync: true);
         CheckDeviceLost();
     }
 
@@ -326,6 +350,8 @@ internal sealed class ProjectionEngine : IDisposable
     private void StartVideoLoop()
     {
         _videoLoopRunning = true;
+        // 첫 프레임이 오기 전에도 한 번은 그려 화면을 갱신한다.
+        _renderRequested = true;
         _videoThread = new Thread(VideoRenderLoop)
         {
             IsBackground = true,
@@ -353,18 +379,29 @@ internal sealed class ProjectionEngine : IDisposable
                 VideoPlayer? player = _video;
                 if (graphics is null || player is null) break;
 
+                OutputWindow? window = null;
                 lock (graphics.RenderLock)
                 {
-                    if (_renderer is not null && _window is not null)
+                    window = _window;
+                    if (_renderer is not null && window is not null)
                     {
-                        if (player.TryAcquireFrame() && player.FrameTexture is not null)
-                            _renderer.SetSourceTexture(player.FrameTexture, player.FrameSize);
+                        bool newFrame = player.TryAcquireFrame() && player.FrameTexture is not null;
+                        if (newFrame) _renderer.SetSourceTexture(player.FrameTexture!, player.FrameSize);
 
-                        _renderer.CurrentPattern = Overlay.Pattern;
-                        _renderer.Render(_window, Settings, Overlay);
-                        rendered = true;
+                        // 동영상은 보통 24~30fps 다. 새 프레임도 없고 바뀐 설정도 없으면
+                        // 같은 그림을 vsync 속도로 다시 그리는 셈이므로 건너뛴다.
+                        if (newFrame || _renderRequested)
+                        {
+                            _renderRequested = false;
+                            _renderer.CurrentPattern = Overlay.Pattern;
+                            _renderer.Render(window, Settings, Overlay);
+                            rendered = true;
+                        }
                     }
                 }
+
+                // vsync 대기는 렌더 락 밖에서 한다.
+                if (rendered) window!.Present(verticalSync: true);
             }
             catch (Exception ex)
             {
@@ -372,8 +409,8 @@ internal sealed class ProjectionEngine : IDisposable
                 break;
             }
 
-            // 출력 창이 없어 Present 로 대기하지 못하는 동안 CPU 를 태우지 않는다.
-            if (!rendered) Thread.Sleep(8);
+            // 그리지 않은 바퀴에서는 다음 프레임을 놓치지 않을 만큼만 쉰다.
+            if (!rendered) Thread.Sleep(AppConfig.VideoFramePollIntervalMilliseconds);
         }
     }
 
@@ -447,13 +484,19 @@ internal sealed class ProjectionEngine : IDisposable
         GraphicsDevice? graphics = _graphics;
         if (graphics is null) return;
 
+        OutputWindow? window;
         lock (graphics.RenderLock)
         {
-            if (_renderer is null || _window is null) return;
+            window = _window;
+            if (_renderer is null || window is null) return;
+            _renderRequested = false;
             _renderer.SetSourceTexture(texture, contentSize);
             _renderer.CurrentPattern = Overlay.Pattern;
-            _renderer.Render(_window, Settings, Overlay);
+            _renderer.Render(window, Settings, Overlay);
         }
+
+        // vsync 대기를 락 밖에서 해야 캡처 스레드가 락을 오래 붙잡지 않는다.
+        window.Present(verticalSync: true);
         CheckDeviceLost();
     }
 

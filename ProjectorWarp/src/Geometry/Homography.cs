@@ -8,9 +8,13 @@ namespace ProjectorWarp.Geometry;
 /// </summary>
 internal readonly struct Homography
 {
-    private readonly float[] _m; // 행 우선 3x3
+    // 행 우선 3x3. 생성 후 절대 수정하지 않는다(Identity 가 배열을 공유한다).
+    private readonly float[] _m;
 
-    public static Homography Identity => new(new float[] { 1, 0, 0, 0, 1, 0, 0, 0, 1 });
+    private static readonly float[] IdentityMatrix = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
+
+    /// <summary>단위 변환. 배열을 공유하므로 호출마다 할당하지 않는다.</summary>
+    public static Homography Identity => new(IdentityMatrix);
 
     private Homography(float[] m) => _m = m;
 

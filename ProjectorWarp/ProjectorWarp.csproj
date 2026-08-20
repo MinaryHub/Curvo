@@ -8,7 +8,7 @@
     <RootNamespace>ProjectorWarp</RootNamespace>
     <AssemblyName>ProjectorWarp</AssemblyName>
     <!-- 릴리스 태그(vX.Y.Z)와 이 값을 맞춰야 자동 업데이트가 새 버전을 알아본다 -->
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -16,7 +16,7 @@
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon></ApplicationIcon>
+    <ApplicationIcon>assets\ProjectorWarp.ico</ApplicationIcon>
     <InvariantGlobalization>false</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <!-- 단일 실행파일(self-contained) 배포 기본값 -->
@@ -30,8 +30,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- 검증용 콘솔 프로젝트는 앱 어셈블리에 포함하지 않는다 -->
+    <!-- 검증용 콘솔 프로젝트와 아이콘 생성기는 앱 어셈블리에 포함하지 않는다 -->
     <Compile Remove="tests\**" />
+    <Compile Remove="tools\**" />
     <Page Remove="tests\**" />
     <None Remove="tests\**" />
   </ItemGroup>
@@ -39,6 +40,11 @@
   <ItemGroup>
     <!-- WindowsDesktop SDK 의 암시적 using 목록에는 System.IO 가 빠져 있어 직접 추가한다 -->
     <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 창 아이콘(Window.Icon)으로 쓰기 위해 리소스로도 포함한다 -->
+    <Resource Include="assets\ProjectorWarp.ico" />
   </ItemGroup>
 
   <ItemGroup>

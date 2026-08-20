@@ -51,16 +51,27 @@ internal static class MeshBuilder
         bool useBezier = settings.BezierEnabled;
         ReadOnlySpan<Vector2> control = settings.Grid.Points;
         int gridSize = settings.Grid.GridSize;
+        int degree = gridSize - 1;
+
+        // u 는 열 인덱스, v 는 행 인덱스로만 결정되므로 번스타인 기저를 정점마다 다시 구하지 않고
+        // 격자선마다 한 번씩만 구해 재사용한다(제어점을 드래그할 때 매번 도는 경로다).
+        Span<float> basisTable = stackalloc float[(AppConfig.MaxTessellation + 1) * AppConfig.MaxGridSize];
+        if (useBezier)
+        {
+            for (int i = 0; i < side; i++)
+                Bezier.ComputeBasis(degree, i * step, basisTable.Slice(i * gridSize, gridSize));
+        }
 
         for (int row = 0; row < side; row++)
         {
             float v = row * step;
+            ReadOnlySpan<float> basisV = useBezier ? basisTable.Slice(row * gridSize, gridSize) : default;
             for (int column = 0; column < side; column++)
             {
                 float u = column * step;
 
                 Vector2 surfacePoint = useBezier
-                    ? Bezier.Evaluate(control, gridSize, u, v)
+                    ? Bezier.Combine(control, gridSize, basisTable.Slice(column * gridSize, gridSize), basisV)
                     : new Vector2(u, v);
 
                 Vector2 position;

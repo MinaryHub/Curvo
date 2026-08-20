@@ -353,10 +353,13 @@ internal static class UpdateService
     private static string DescribeHttpFailure(HttpResponseMessage response, string repository) =>
         (int)response.StatusCode switch
         {
+            // 404 는 "릴리스가 없다" 와 "볼 권한이 없다" 를 구분해 주지 않는다.
+            // 비공개 저장소에 릴리스가 있어도 인증 없이는 똑같이 404 이므로 단정하지 않는다.
             404 => Token is null
-                ? $"{repository} 에 공개된 릴리스가 없습니다. 저장소가 비공개라면 " +
-                  $"{AppConfig.UpdateTokenEnvironmentVariable} 환경 변수에 읽기 권한 토큰이 필요합니다."
-                : $"{repository} 에 릴리스가 없습니다(또는 토큰에 이 저장소 읽기 권한이 없습니다).",
+                ? $"{repository} 의 릴리스를 볼 수 없습니다. 비공개 저장소이면 " +
+                  $"{AppConfig.UpdateTokenEnvironmentVariable} 환경 변수에 읽기 권한 토큰이 필요합니다. " +
+                  "공개 저장소인데도 이 메시지가 보이면 아직 릴리스가 없는 것입니다."
+                : $"{repository} 에 릴리스가 없거나, 토큰에 이 저장소 읽기 권한이 없습니다.",
             401 or 403 => $"GitHub 가 요청을 거부했습니다. {AppConfig.UpdateTokenEnvironmentVariable} 토큰이 " +
                           "만료되었거나 요청 한도를 넘었을 수 있습니다.",
             _ => $"업데이트 확인에 실패했습니다. (HTTP {(int)response.StatusCode} {response.ReasonPhrase})",

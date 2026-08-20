@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -26,6 +27,8 @@ public partial class MainWindow : Window
     private List<WindowInfo> _windows = new();
     private List<MonitorInfo> _monitors = new();
     private IntPtr _thumbnail = IntPtr.Zero;
+    /// <summary>현재 썸네일이 가리키는 소스 창. 같으면 재등록 없이 사각형만 갱신한다.</summary>
+    private IntPtr _thumbnailSource = IntPtr.Zero;
     // 생성자에서 XAML 초기값이 적용되는 동안 이벤트 핸들러가 동작하지 않도록 막는다.
     private bool _suppressSync = true;
 
@@ -73,6 +76,7 @@ public partial class MainWindow : Window
         Title = $"{AppConfig.AppName} {UpdateService.CurrentVersionText} — 프로젝터 곡면 워핑";
         VersionText.Text = $"버전 {UpdateService.CurrentVersionText}";
         UpdateSourceText.Text = $"업데이트 확인 대상: {UpdateService.Repository}";
+        SponsorUrlText.Text = AppConfig.SponsorUrl;
 
         PopulateStaticCombos();
         StartPlaybackTimer();
@@ -130,6 +134,7 @@ public partial class MainWindow : Window
         SyncUiFromState();
         SyncAppSettingsUi();
 
+        UpdatePreviewVisibility();
         if (_appSettings.StartMinimized) WindowState = WindowState.Minimized;
         if (_appSettings.AutoStartProjection) BeginAutoStart();
         if (_appSettings.CheckForUpdatesOnStartup) _ = CheckForUpdatesAsync(quiet: true);
@@ -142,14 +147,49 @@ public partial class MainWindow : Window
         var excluded = new List<IntPtr> { selfHandle };
         if (_engine.Window is not null) excluded.Add(_engine.Window.Handle);
 
-        _windows = SourceEnumerator.EnumerateWindows(excluded);
-        _monitors = SourceEnumerator.EnumerateMonitors();
+        List<WindowInfo> windows = SourceEnumerator.EnumerateWindows(excluded);
+        List<MonitorInfo> monitors = SourceEnumerator.EnumerateMonitors();
 
-        WindowList.ItemsSource = _windows.Select(WindowListItem.From).ToList();
+        // 자동 시작 재시도는 2초마다 이 메서드를 부른다. 목록이 그대로일 때 ItemsSource 를
+        // 다시 만들면 WPF 아이템을 전부 새로 짓고 선택도 풀리므로, 바뀐 경우에만 갱신한다.
+        if (!SameWindows(windows, _windows))
+        {
+            _windows = windows;
+            WindowList.ItemsSource = _windows.Select(WindowListItem.From).ToList();
+        }
 
+        if (SameMonitors(monitors, _monitors)) return;
+
+        _monitors = monitors;
         MonitorInfo? previousOutput = SelectedOutputMonitor();
         OutputMonitorCombo.ItemsSource = _monitors.Select(MonitorListItem.From).ToList();
         OutputMonitorCombo.SelectedIndex = IndexOfMonitor(previousOutput?.DeviceName);
+    }
+
+    private static bool SameWindows(List<WindowInfo> left, List<WindowInfo> right)
+    {
+        if (left.Count != right.Count) return false;
+        for (int i = 0; i < left.Count; i++)
+        {
+            if (left[i].Handle != right[i].Handle ||
+                !string.Equals(left[i].Title, right[i].Title, StringComparison.Ordinal))
+                return false;
+        }
+        return true;
+    }
+
+    private static bool SameMonitors(List<MonitorInfo> left, List<MonitorInfo> right)
+    {
+        if (left.Count != right.Count) return false;
+        for (int i = 0; i < left.Count; i++)
+        {
+            if (left[i].Handle != right[i].Handle ||
+                !string.Equals(left[i].DeviceName, right[i].DeviceName, StringComparison.OrdinalIgnoreCase) ||
+                left[i].Bounds.Width != right[i].Bounds.Width ||
+                left[i].Bounds.Height != right[i].Bounds.Height)
+                return false;
+        }
+        return true;
     }
 
     private int IndexOfMonitor(string? deviceName)
@@ -188,49 +228,61 @@ public partial class MainWindow : Window
 
     private void OnRefreshClick(object sender, RoutedEventArgs e) => RefreshSourceLists();
 
-    private void OnSourceTabChanged(object sender, SelectionChangedEventArgs e)
+    private async void OnSourceTabChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;
+        UpdatePreviewVisibility();
         UpdateThumbnail();
         UpdateFeedbackWarning();
+        // 캡처 시작 버튼이 없으므로, 출력 중이면 탭을 바꾸는 순간 소스도 바뀐다.
+        await StartSelectedSourceAsync();
     }
 
-    private void OnWindowSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void OnWindowSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateThumbnail();
         UpdateFeedbackWarning();
+        if (IsWindowSourceTab) await StartSelectedSourceAsync();
     }
 
-    private void OnPowerPointShortcutClick(object sender, RoutedEventArgs e)
-        => SelectByProcessNames(SourceEnumerator.PowerPointProcessNames, "PowerPoint 창을 찾지 못했습니다. 슬라이드 쇼를 창 모드로 실행하거나 [내장 재생] 으로 파일을 직접 열어 보세요.");
-
-    private void OnPlayerShortcutClick(object sender, RoutedEventArgs e)
-        => SelectByProcessNames(SourceEnumerator.MediaPlayerProcessNames, "지원되는 미디어 플레이어 창을 찾지 못했습니다.");
-
-    private void SelectByProcessNames(IEnumerable<string> processNames, string notFoundMessage)
+    /// <summary>
+    /// [출력 시작] 은 출력 창을 열고 <b>현재 선택된 소스까지 함께 시작</b>한다.
+    /// 화면 표시 여부는 출력 시작/중지 두 버튼만으로 결정된다.
+    /// </summary>
+    private async void OnStartOutputClick(object sender, RoutedEventArgs e)
     {
-        RefreshSourceLists();
-        WindowInfo? match = SourceEnumerator.FindByProcessNames(_windows, processNames);
-        if (match is null)
+        MonitorInfo? monitor = SelectedOutputMonitor();
+        if (monitor is null)
         {
-            StatusText.Text = notFoundMessage;
+            StatusText.Text = "출력 모니터를 선택하세요.";
             return;
         }
 
-        SourceTabs.SelectedIndex = WindowSourceTabIndex;
-        int index = _windows.IndexOf(match);
-        WindowList.SelectedIndex = index;
-        WindowList.ScrollIntoView(WindowList.SelectedItem);
-        StatusText.Text = $"선택: {match.DisplayText}";
+        CancelAutoStart(null);
+        if (!_engine.IsOutputActive) _engine.StartOutput(monitor);
+        await StartSelectedSourceAsync();
+        UpdateFeedbackWarning();
     }
 
-    private async void OnStartCaptureClick(object sender, RoutedEventArgs e)
+    private void OnStopOutputClick(object sender, RoutedEventArgs e)
     {
+        CancelAutoStart(null);
+        StopSlideAdvanceTimer();
+        _engine.StopOutput();
+        UpdatePlaybackUi();
+        UpdateFeedbackWarning();
+    }
+
+    /// <summary>현재 탭의 소스를 출력에 연결한다. 출력 창이 없으면 아무것도 하지 않는다.</summary>
+    private async Task StartSelectedSourceAsync()
+    {
+        if (!_engine.IsOutputActive) return;
+
         if (IsMediaSourceTab)
         {
             if (!_media.IsActive)
             {
-                StatusText.Text = "먼저 [동영상 열기] 또는 [슬라이드 열기] 로 파일을 선택하세요.";
+                StatusText.Text = "[동영상 열기] 또는 [슬라이드 열기] 로 파일을 선택하세요.";
                 return;
             }
             await StartCurrentMediaAsync();
@@ -240,52 +292,10 @@ public partial class MainWindow : Window
         CaptureTarget? target = BuildSelectedTarget();
         if (target is null)
         {
-            StatusText.Text = "캡처할 창 또는 모니터를 먼저 선택하세요.";
+            StatusText.Text = "캡처할 창을 목록에서 선택하세요.";
             return;
         }
-
-        if (!_engine.IsOutputActive)
-        {
-            MonitorInfo? monitor = SelectedOutputMonitor();
-            if (monitor is null)
-            {
-                StatusText.Text = "출력 모니터를 먼저 선택하세요.";
-                return;
-            }
-            _engine.StartOutput(monitor);
-        }
-
-        CancelAutoStart(null);
         _engine.StartCapture(target);
-        UpdateFeedbackWarning();
-    }
-
-    private void OnStopCaptureClick(object sender, RoutedEventArgs e)
-    {
-        CancelAutoStart(null);
-        StopSlideAdvanceTimer();
-        _engine.StopSource();
-        UpdatePlaybackUi();
-    }
-
-    private void OnStartOutputClick(object sender, RoutedEventArgs e)
-    {
-        MonitorInfo? monitor = SelectedOutputMonitor();
-        if (monitor is null)
-        {
-            StatusText.Text = "출력 모니터를 선택하세요.";
-            return;
-        }
-
-        _engine.StartOutput(monitor);
-        UpdateFeedbackWarning();
-    }
-
-    private void OnStopOutputClick(object sender, RoutedEventArgs e)
-    {
-        CancelAutoStart(null);
-        _engine.StopOutput();
-        UpdateFeedbackWarning();
     }
 
     private void OnTopmostChanged(object sender, RoutedEventArgs e)
@@ -665,7 +675,7 @@ public partial class MainWindow : Window
         MonitorInfo? output = _engine.OutputMonitor ?? SelectedOutputMonitor();
         if (output is null)
         {
-            FeedbackWarning.Visibility = Visibility.Collapsed;
+            FeedbackWarningArea.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -677,30 +687,41 @@ public partial class MainWindow : Window
         }
 
         bool sameMonitor = sourceMonitor != IntPtr.Zero && sourceMonitor == output.Handle;
-        FeedbackWarning.Visibility = sameMonitor ? Visibility.Visible : Visibility.Collapsed;
+        FeedbackWarningArea.Visibility = sameMonitor ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ---- DWM 썸네일 미리보기 ---------------------------------------------
     private void OnWindowLayoutChanged(object sender, EventArgs e) => UpdateThumbnail();
 
+    /// <summary>미리보기는 [창] 탭에서만 쓴다. 다른 탭에서는 자리만 차지한다.</summary>
+    private void UpdatePreviewVisibility()
+        => PreviewArea.Visibility = IsWindowSourceTab ? Visibility.Visible : Visibility.Collapsed;
+
     private void UpdateThumbnail()
     {
-        UnregisterThumbnail();
-
         IntPtr destination = new WindowInteropHelper(this).Handle;
         if (destination == IntPtr.Zero) return;
 
         IntPtr sourceHandle = IsWindowSourceTab ? SelectedWindow()?.Handle ?? IntPtr.Zero : IntPtr.Zero;
         if (sourceHandle == IntPtr.Zero || !Win32.IsWindow(sourceHandle))
         {
+            UnregisterThumbnail();
             PreviewPlaceholder.Visibility = Visibility.Visible;
             return;
         }
 
-        if (Win32.DwmRegisterThumbnail(destination, sourceHandle, out _thumbnail) != 0 || _thumbnail == IntPtr.Zero)
+        // 창을 옮기거나 크기를 바꿀 때마다 이 메서드가 불린다. 소스가 그대로면
+        // 등록을 다시 하지 않고 목적지 사각형만 갱신한다(DWM 재등록은 비싸다).
+        if (_thumbnail == IntPtr.Zero || sourceHandle != _thumbnailSource)
         {
-            PreviewPlaceholder.Visibility = Visibility.Visible;
-            return;
+            UnregisterThumbnail();
+            if (Win32.DwmRegisterThumbnail(destination, sourceHandle, out _thumbnail) != 0 || _thumbnail == IntPtr.Zero)
+            {
+                _thumbnail = IntPtr.Zero;
+                PreviewPlaceholder.Visibility = Visibility.Visible;
+                return;
+            }
+            _thumbnailSource = sourceHandle;
         }
 
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
@@ -728,6 +749,7 @@ public partial class MainWindow : Window
 
     private void UnregisterThumbnail()
     {
+        _thumbnailSource = IntPtr.Zero;
         if (_thumbnail == IntPtr.Zero) return;
         Win32.DwmUnregisterThumbnail(_thumbnail);
         _thumbnail = IntPtr.Zero;
@@ -1327,6 +1349,35 @@ public partial class MainWindow : Window
         return first.Length <= AppConfig.UpdateNotesPreviewLength
             ? "\n" + first
             : "\n" + first[..AppConfig.UpdateNotesPreviewLength].TrimEnd() + "…";
+    }
+
+    // ---- 후원 -------------------------------------------------------------
+    private void OnSponsorClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // 앱은 결제에 관여하지 않고 후원 페이지만 기본 브라우저로 연다.
+            Process.Start(new ProcessStartInfo(AppConfig.SponsorUrl) { UseShellExecute = true });
+            StatusText.Text = $"후원 페이지를 열었습니다: {AppConfig.SponsorUrl}";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = $"후원 페이지를 열지 못했습니다: {ex.Message}. 링크를 복사해 브라우저에 붙여넣으세요.";
+        }
+    }
+
+    private void OnCopySponsorLinkClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(AppConfig.SponsorUrl);
+            StatusText.Text = "후원 링크를 클립보드에 복사했습니다.";
+        }
+        catch (Exception ex)
+        {
+            // 다른 프로그램이 클립보드를 잡고 있으면 실패할 수 있다.
+            StatusText.Text = $"링크를 복사하지 못했습니다: {ex.Message}";
+        }
     }
 
     private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)

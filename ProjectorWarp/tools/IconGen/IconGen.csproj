@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    assets\ProjectorWarp.ico 생성기. 아이콘을 손으로 만든 바이너리로 두지 않고
+    코드로 재현할 수 있게 남겨 둔다. 앱 빌드에는 포함되지 않는다.
+      dotnet run --project tools\IconGen -- ..\..\assets\ProjectorWarp.ico
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+</Project>

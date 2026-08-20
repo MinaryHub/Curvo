@@ -38,7 +38,17 @@ internal static class Bezier
         Span<float> basisV = stackalloc float[AppConfig.MaxGridSize];
         ComputeBasis(degree, u, basisU);
         ComputeBasis(degree, v, basisV);
+        return Combine(control, gridSize, basisU, basisV);
+    }
 
+    /// <summary>
+    /// 이미 구해 둔 기저로 텐서곱 합만 계산한다.
+    /// 격자 전체를 훑을 때는 기저가 행/열마다 같으므로 이 형태로 재사용한다.
+    /// </summary>
+    public static Vector2 Combine(
+        ReadOnlySpan<Vector2> control, int gridSize, ReadOnlySpan<float> basisU, ReadOnlySpan<float> basisV)
+    {
+        int degree = gridSize - 1;
         Vector2 result = Vector2.Zero;
         for (int j = 0; j <= degree; j++)
         {

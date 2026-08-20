@@ -57,6 +57,12 @@ internal static class AppConfig
     /// <summary>프레임 풀 버퍼 수. 지연 최소화를 위해 2개만 사용한다.</summary>
     public const int FramePoolBufferCount = 2;
 
+    /// <summary>
+    /// 동영상 렌더 루프가 새 프레임을 확인하는 간격(ms).
+    /// 24~30fps 소스의 프레임 도착을 놓치지 않을 만큼 짧게 둔다.
+    /// </summary>
+    public const int VideoFramePollIntervalMilliseconds = 2;
+
     // ---- 출력 창 ----------------------------------------------------------
     public const int WindowedOutputWidth = 1280;
     public const int WindowedOutputHeight = 720;
@@ -98,8 +104,12 @@ internal static class AppConfig
     /// <summary>
     /// 업데이트를 받아올 GitHub 저장소. 배포처를 옮길 때 <b>이 한 줄만</b> 바꾸면 된다.
     /// (사용자가 앱에서 입력하는 값이 아니다.)
+    /// <para>
+    /// 소스 저장소와 분리한 <b>공개 배포 저장소</b>다. 비공개 저장소의 릴리스는 인증 없이 조회할 수 없어
+    /// 받는 PC 마다 토큰이 필요해지므로, 실행 파일만 공개 저장소에 올려 설정 없이 업데이트되게 한다.
+    /// </para>
     /// </summary>
-    public const string UpdateRepository = "knoxxr/Curvo";
+    public const string UpdateRepository = "MinaryHub/ProjectorWarp";
     /// <summary>GitHub 최신 릴리스 조회 주소. {0} 에 "owner/repo" 가 들어간다.</summary>
     public const string UpdateReleaseApiFormat = "https://api.github.com/repos/{0}/releases/latest";
     public const string UpdateApiMediaType = "application/vnd.github+json";
@@ -129,6 +139,15 @@ internal static class AppConfig
     public const int UpdateReplaceRetryMilliseconds = 250;
     /// <summary>상태 표시에 넣는 릴리스 본문 미리보기 길이(글자).</summary>
     public const int UpdateNotesPreviewLength = 90;
+
+    // ---- 후원 -------------------------------------------------------------
+    /// <summary>GitHub Sponsors 계정(조직).</summary>
+    public const string SponsorAccount = "MinaryHub";
+    /// <summary>
+    /// 후원 페이지. 브라우저로 열기만 하며 앱은 결제에 관여하지 않는다.
+    /// frequency=one-time 은 후원자가 정기 결제 대신 금액 입력 화면으로 바로 가게 한다.
+    /// </summary>
+    public const string SponsorUrl = "https://github.com/sponsors/minaryhub?frequency=one-time";
 
     /// <summary>슬라이드 변환 결과 캐시 폴더.</summary>
     public static string SlideCacheDirectory => Path.Combine(UserDataDirectory, SlideCacheFolderName);

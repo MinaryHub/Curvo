@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Numerics;
+using System.Windows.Threading;
 using ProjectorWarp;
 using ProjectorWarp.Capture;
 using ProjectorWarp.Geometry;
@@ -251,7 +253,10 @@ if (graphics is not null && monitors.Count > 0)
         var overlay = new OverlayState { EditMode = true, ShowReferenceGrid = true, ShowDiagonals = true };
 
         for (int i = 0; i < 30; i++)
+        {
             renderer.Render(window, settings, overlay);
+            window.Present(verticalSync: false);
+        }
 
         Check(window.RenderTargetView is not null && window.Width > 0 && window.Height > 0,
             $"output window swapchain + present ({window.Width}x{window.Height} on {target.DeviceName})");
@@ -556,7 +561,11 @@ if (graphics is not null && monitors.Count > 0)
                 if (player.TryAcquireFrame() && player.FrameTexture is not null)
                 {
                     renderer.SetSourceTexture(player.FrameTexture, player.FrameSize);
-                    for (int i = 0; i < 10; i++) renderer.Render(window, settings, overlay);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        renderer.Render(window, settings, overlay);
+                        window.Present(verticalSync: false);
+                    }
                     videoRendered = true;
                 }
                 else
@@ -579,7 +588,11 @@ if (graphics is not null && monitors.Count > 0)
                 {
                     renderer.SetSourceTexture(deck.CurrentTexture, deck.CurrentSize);
                     overlay.EditMode = true;
-                    for (int i = 0; i < 10; i++) renderer.Render(window, settings, overlay);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        renderer.Render(window, settings, overlay);
+                        window.Present(verticalSync: false);
+                    }
                     slideRendered = true;
                 }
             }
@@ -593,6 +606,53 @@ if (graphics is not null && monitors.Count > 0)
     {
         Console.WriteLine(ex.ToString());
         Check(false, "media through warp pipeline");
+    }
+}
+
+// 21-b. 동영상 렌더 루프가 소스 프레임 속도만큼만 그리는지 (60Hz 로 같은 그림을 되그리지 않는지).
+//       마지막 모니터에 약 4초간 동영상이 표시된다.
+if (graphics is not null && monitors.Count > 0 && args.FirstOrDefault(File.Exists) is string loopClip)
+{
+    ProjectionEngine? engine = null;
+    try
+    {
+        engine = new ProjectionEngine(Dispatcher.CurrentDispatcher);
+        engine.StartOutput(monitors[^1]);
+        engine.StartVideo(loopClip, loop: true, volume: 0.0);
+
+        // 첫 프레임이 나올 때까지 기다린다.
+        var ready = DateTime.UtcNow + TimeSpan.FromSeconds(8);
+        while (DateTime.UtcNow < ready && engine.RenderCount == 0) Thread.Sleep(20);
+
+        long before = engine.RenderCount;
+        var window = Stopwatch.StartNew();
+        Thread.Sleep(2000);
+        window.Stop();
+        double rendersPerSecond = (engine.RenderCount - before) / window.Elapsed.TotalSeconds;
+
+        // 60Hz vsync 로 헛돌면 약 60이 나온다. 24~30fps 소스라면 그 근처여야 한다.
+        Check(rendersPerSecond > 5 && rendersPerSecond < 45,
+            $"video loop renders at source rate, not vsync rate ({rendersPerSecond:F1}/s)");
+
+        // 일시정지 상태에서도 설정 변경(RequestRender)은 반드시 화면에 반영되어야 한다.
+        engine.Video!.Pause();
+        Thread.Sleep(300);
+        long paused = engine.RenderCount;
+        Thread.Sleep(400);
+        Check(engine.RenderCount == paused, $"paused video stops redrawing ({engine.RenderCount - paused} renders)");
+
+        engine.RequestRender();
+        Thread.Sleep(300);
+        Check(engine.RenderCount > paused, $"paused video still repaints on request ({engine.RenderCount - paused} renders)");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.ToString());
+        Check(false, "video loop render rate");
+    }
+    finally
+    {
+        engine?.Dispose();
     }
 }
 

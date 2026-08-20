@@ -158,7 +158,14 @@ internal sealed class WarpRenderer : IDisposable
         _currentSourceView = null;
     }
 
-    /// <summary>한 프레임을 그린다. 호출자는 GraphicsDevice.RenderLock 을 잡고 있어야 한다.</summary>
+    /// <summary>
+    /// 한 프레임을 그린다. 호출자는 GraphicsDevice.RenderLock 을 잡고 있어야 한다.
+    /// <para>
+    /// Present 는 하지 않는다. vsync Present 는 최대 한 프레임(약 16ms) 동안 블록되므로
+    /// 렌더 락을 쥔 채로 하면 캡처 스레드와 UI 스레드가 그만큼 함께 멈춘다.
+    /// 호출자가 락을 놓은 뒤 <see cref="OutputWindow.Present"/> 를 부른다.
+    /// </para>
+    /// </summary>
     public void Render(OutputWindow window, WarpSettings settings, OverlayState overlay)
     {
         ID3D11RenderTargetView? renderTarget = window.RenderTargetView;
@@ -177,7 +184,7 @@ internal sealed class WarpRenderer : IDisposable
         if (overlay.EditMode)
             DrawOverlay(context, settings, overlay, window);
 
-        window.Present(verticalSync: true);
+        RenderCount++;
     }
 
     private void DrawWarpedSource(ID3D11DeviceContext context, WarpSettings settings, OutputWindow window)
@@ -226,6 +233,9 @@ internal sealed class WarpRenderer : IDisposable
     private void BuildOverlayGeometry(WarpSettings settings, OverlayState overlay)
     {
         float lineWidth = AppConfig.OverlayLineWidthPixels;
+        // 호모그래피는 8x8 가우스 소거로 만들어진다. 점마다 다시 만들면
+        // 6x6 격자에서 프레임당 150회를 넘으므로 한 번만 만들어 재사용한다.
+        Homography homography = settings.BuildHomography();
 
         if (overlay.ShowReferenceGrid)
         {
@@ -265,6 +275,7 @@ internal sealed class WarpRenderer : IDisposable
 
         if (settings.CornerPinEnabled)
         {
+            // 코너 핸들은 출력 좌표 그 자체이므로 변환하지 않는다.
             for (int i = 0; i < settings.CornerPoints.Length; i++)
             {
                 Vector2 current = settings.CornerPoints[i];
@@ -281,32 +292,34 @@ internal sealed class WarpRenderer : IDisposable
         ControlPointGrid grid = settings.Grid;
         int size = grid.GridSize;
 
+        bool cornerPin = settings.CornerPinEnabled;
+
         for (int row = 0; row < size; row++)
         {
             for (int column = 0; column < size - 1; column++)
-                _overlayBuilder.AddLine(ToOutput(settings, grid.Get(column, row)),
-                    ToOutput(settings, grid.Get(column + 1, row)), ControlGridColor, lineWidth);
+                _overlayBuilder.AddLine(ToOutput(homography, cornerPin, grid.Get(column, row)),
+                    ToOutput(homography, cornerPin, grid.Get(column + 1, row)), ControlGridColor, lineWidth);
         }
         for (int column = 0; column < size; column++)
         {
             for (int row = 0; row < size - 1; row++)
-                _overlayBuilder.AddLine(ToOutput(settings, grid.Get(column, row)),
-                    ToOutput(settings, grid.Get(column, row + 1)), ControlGridColor, lineWidth);
+                _overlayBuilder.AddLine(ToOutput(homography, cornerPin, grid.Get(column, row)),
+                    ToOutput(homography, cornerPin, grid.Get(column, row + 1)), ControlGridColor, lineWidth);
         }
 
         for (int i = 0; i < grid.Count; i++)
         {
-            _overlayBuilder.AddHandle(ToOutput(settings, grid[i]),
+            _overlayBuilder.AddHandle(ToOutput(homography, cornerPin, grid[i]),
                 overlay.SelectedControlPoint == i ? SelectedHandleColor : HandleColor,
                 AppConfig.HandleRadiusPixels);
         }
     }
 
     /// <summary>제어점(워핑 공간)을 실제 출력 좌표로 변환한다. 코너 핀이 켜져 있으면 함께 적용한다.</summary>
-    private static Vector2 ToOutput(WarpSettings settings, Vector2 point)
+    private static Vector2 ToOutput(in Homography homography, bool cornerPinEnabled, Vector2 point)
     {
-        if (!settings.CornerPinEnabled) return point;
-        Vector3 projected = settings.BuildHomography().TransformHomogeneous(point);
+        if (!cornerPinEnabled) return point;
+        Vector3 projected = homography.TransformHomogeneous(point);
         float w = MathF.Abs(projected.Z) < 1e-6f ? 1e-6f : projected.Z;
         return new Vector2(projected.X / w, projected.Y / w);
     }
@@ -416,6 +429,9 @@ internal sealed class WarpRenderer : IDisposable
 
     /// <summary>렌더 직전에 설정되는 현재 테스트 패턴.</summary>
     public TestPattern CurrentPattern { get; set; } = TestPattern.None;
+
+    /// <summary>지금까지 그린 프레임 수. 불필요한 재렌더가 없는지 검증할 때 쓴다.</summary>
+    public long RenderCount { get; private set; }
 
     public void Dispose()
     {

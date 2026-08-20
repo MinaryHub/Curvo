@@ -17,7 +17,14 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
+    <!-- ProjectionEngine 이 Dispatcher 를 받으므로 WPF 참조가 필요하다 -->
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WindowsDesktop SDK(UseWPF) 의 암시적 using 목록에는 System.IO 가 빠져 있다 -->
+    <Using Include="System.IO" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -32,6 +39,7 @@
     <Compile Include="..\..\src\Rendering\MeshBuilder.cs" />
     <Compile Include="..\..\src\Rendering\OutputWindow.cs" />
     <Compile Include="..\..\src\Rendering\OverlayState.cs" />
+    <Compile Include="..\..\src\Rendering\ProjectionEngine.cs" />
     <Compile Include="..\..\src\Rendering\ShaderLoader.cs" />
     <Compile Include="..\..\src\Rendering\WarpRenderer.cs" />
     <EmbeddedResource Include="..\..\src\Rendering\Shaders\warp.hlsl"
