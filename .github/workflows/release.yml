@@ -1,0 +1,55 @@
+name: Release
+
+# Push a tag like v1.3.2 to build Curvo.exe and publish a GitHub Release.
+# Installed copies look for `Curvo.exe` in MinaryHub/Curvo's latest release
+# (src/AppConfig.cs: UpdateRepository, UpdateAssetName).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: ProjectorWarp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # The tag and <Version> in Curvo.csproj must agree, or the app would
+      # report one number and the release another.
+      - name: Resolve version from tag
+        id: ver
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          [xml]$proj = Get-Content Curvo.csproj
+          $inProj = ($proj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+          if ($inProj -ne $v) {
+            Write-Error "Tag $v does not match <Version>$inProj</Version> in Curvo.csproj"
+            exit 1
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publish (self-contained single file)
+        run: |
+          dotnet publish Curvo.csproj -c Release -o publish
+          Remove-Item publish\*.pdb -ErrorAction SilentlyContinue
+          if (-not (Test-Path publish\Curvo.exe)) { Write-Error "publish\Curvo.exe missing"; exit 1 }
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" publish\Curvo.exe `
+            --repo "${{ github.repository }}" `
+            --title "Curvo ${{ github.ref_name }}" `
+            --generate-notes
