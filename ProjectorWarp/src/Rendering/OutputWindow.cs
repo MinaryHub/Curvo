@@ -24,6 +24,12 @@ internal sealed class OutputWindow : IDisposable
     private static readonly Dictionary<IntPtr, OutputWindow> Instances = new();
 
     private readonly GraphicsDevice _graphics;
+    /// <summary>
+    /// Present 는 렌더 락 밖(캡처·동영상 스레드)에서 불린다. 같은 순간 UI 스레드가 스왑체인을
+    /// 해제하거나 크기를 바꾸면 해제된 스왑체인에 Present 하게 되므로 이 락으로 서로 막는다.
+    /// 락 순서는 항상 RenderLock → _presentLock 이다(Present 는 RenderLock 을 잡지 않는다).
+    /// </summary>
+    private readonly object _presentLock = new();
     private IDXGISwapChain1? _swapChain;
     private ID3D11RenderTargetView? _renderTargetView;
     private IntPtr _handle;
@@ -49,6 +55,9 @@ internal sealed class OutputWindow : IDisposable
     public event Action<Vector2, OutputMouseButton>? MouseUp;
 
     public event Action? SizeChanged;
+
+    /// <summary>드래그 중 마우스 캡처를 잃었을 때(Alt+Tab 등으로 버튼 떼기를 받지 못한 경우).</summary>
+    public event Action? MouseCaptureLost;
 
     public event Action? Closed;
 
@@ -150,7 +159,10 @@ internal sealed class OutputWindow : IDisposable
 
     public void Present(bool verticalSync)
     {
-        _swapChain?.Present(verticalSync ? 1u : 0u, PresentFlags.None);
+        lock (_presentLock)
+        {
+            _swapChain?.Present(verticalSync ? 1u : 0u, PresentFlags.None);
+        }
     }
 
     private void Resize(int width, int height)
@@ -159,6 +171,7 @@ internal sealed class OutputWindow : IDisposable
         if (width == Width && height == Height && _renderTargetView is not null) return;
 
         lock (_graphics.RenderLock)
+        lock (_presentLock)
         {
             Width = width;
             Height = height;
@@ -261,6 +274,11 @@ internal sealed class OutputWindow : IDisposable
                 MouseUp?.Invoke(ToNormalized(lParam), OutputMouseButton.Right);
                 return IntPtr.Zero;
 
+            case Win32.WM_CAPTURECHANGED:
+                // 정상적인 버튼 떼기(ReleaseCapture)에서도 오지만 그때는 드래그가 이미 끝나 있어 무해하다.
+                MouseCaptureLost?.Invoke();
+                return IntPtr.Zero;
+
             case Win32.WM_CLOSE:
                 Closed?.Invoke();
                 return IntPtr.Zero;
@@ -285,11 +303,13 @@ internal sealed class OutputWindow : IDisposable
         _disposed = true;
 
         lock (_graphics.RenderLock)
+        lock (_presentLock)
         {
             _renderTargetView?.Dispose();
             _renderTargetView = null;
-            _swapChain?.Dispose();
+            IDXGISwapChain1? swapChain = _swapChain;
             _swapChain = null;
+            swapChain?.Dispose();
         }
 
         if (_handle != IntPtr.Zero)

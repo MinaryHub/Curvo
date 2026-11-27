@@ -31,6 +31,11 @@ public partial class MainWindow : Window
     private IntPtr _thumbnailSource = IntPtr.Zero;
     // 생성자에서 XAML 초기값이 적용되는 동안 이벤트 핸들러가 동작하지 않도록 막는다.
     private bool _suppressSync = true;
+    /// <summary>
+    /// 코드에서 탭/창 선택을 바꾸는 중인지. 선택 변경 이벤트가 소스를 시작하면
+    /// 호출자가 직접 시작하는 것과 겹쳐 캡처·동영상·슬라이드 변환이 두 번 돈다.
+    /// </summary>
+    private bool _selectingSourceProgrammatically;
 
     private AppSettings _appSettings = new();
     /// <summary>시작 시 불러온 프리셋. 자동 시작에서 소스/출력을 찾는 근거가 된다.</summary>
@@ -239,10 +244,14 @@ public partial class MainWindow : Window
 
     private async void OnSourceTabChanged(object sender, SelectionChangedEventArgs e)
     {
+        // SelectionChanged 는 라우티드 이벤트라 탭 안의 WindowList 선택 변경도 여기까지 올라온다.
+        // 그대로 두면 창 하나를 고를 때마다 캡처를 두 번 다시 시작한다.
+        if (!ReferenceEquals(e.OriginalSource, SourceTabs)) return;
         if (!IsLoaded) return;
         UpdatePreviewVisibility();
         UpdateThumbnail();
         UpdateFeedbackWarning();
+        if (_selectingSourceProgrammatically) return;
         // 캡처 시작 버튼이 없으므로, 출력 중이면 탭을 바꾸는 순간 소스도 바뀐다.
         await StartSelectedSourceAsync();
     }
@@ -251,7 +260,23 @@ public partial class MainWindow : Window
     {
         UpdateThumbnail();
         UpdateFeedbackWarning();
+        if (_selectingSourceProgrammatically) return;
         if (IsWindowSourceTab) await StartSelectedSourceAsync();
+    }
+
+    /// <summary>소스를 시작하지 않고 탭(과 창 목록) 선택만 바꾼다. 시작은 호출자가 한다.</summary>
+    private void SelectSourceWithoutStarting(int tabIndex, int windowIndex = -1)
+    {
+        _selectingSourceProgrammatically = true;
+        try
+        {
+            SourceTabs.SelectedIndex = tabIndex;
+            if (windowIndex >= 0) WindowList.SelectedIndex = windowIndex;
+        }
+        finally
+        {
+            _selectingSourceProgrammatically = false;
+        }
     }
 
     /// <summary>
@@ -349,16 +374,15 @@ public partial class MainWindow : Window
         if (item.Size == Settings.Grid.GridSize) return;
 
         _engine.History.Push(Settings);
-        Settings.Grid.Resize(item.Size);
         Overlay.ClearSelection();
-        _engine.InvalidateGeometry();
+        _engine.EditSettings(settings => settings.Grid.Resize(item.Size));
     }
 
     private void OnTessellationChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_suppressSync) return;
-        Settings.Tessellation = (int)Math.Round(e.NewValue);
-        _engine.InvalidateGeometry();
+        int tessellation = (int)Math.Round(e.NewValue);
+        _engine.EditSettings(settings => settings.Tessellation = tessellation);
     }
 
     private void OnColorChanged(object sender, RoutedEventArgs e)
@@ -392,26 +416,31 @@ public partial class MainWindow : Window
     private void OnResetClick(object sender, RoutedEventArgs e)
     {
         _engine.History.Push(Settings);
-        Settings.ResetGeometry();
         Overlay.ClearSelection();
-        _engine.InvalidateGeometry();
+        _engine.EditSettings(settings => settings.ResetGeometry());
         SyncUiFromState();
     }
 
     private void OnUndoClick(object sender, RoutedEventArgs e)
     {
-        if (!_engine.History.Undo(Settings)) return;
-        Overlay.ClearSelection();
-        _engine.InvalidateGeometry();
-        SyncUiFromState();
+        bool changed = false;
+        _engine.EditSettings(settings =>
+        {
+            changed = _engine.History.Undo(settings);
+            if (changed) Overlay.ClearSelection();
+        });
+        if (changed) SyncUiFromState();
     }
 
     private void OnRedoClick(object sender, RoutedEventArgs e)
     {
-        if (!_engine.History.Redo(Settings)) return;
-        Overlay.ClearSelection();
-        _engine.InvalidateGeometry();
-        SyncUiFromState();
+        bool changed = false;
+        _engine.EditSettings(settings =>
+        {
+            changed = _engine.History.Redo(settings);
+            if (changed) Overlay.ClearSelection();
+        });
+        if (changed) SyncUiFromState();
     }
 
     // ---- 프리셋 -----------------------------------------------------------
@@ -499,9 +528,8 @@ public partial class MainWindow : Window
     private void ApplyPreset(Preset preset, bool restoreSourceAndOutput)
     {
         _engine.History.Push(Settings);
-        preset.ApplyTo(Settings);
         Overlay.ClearSelection();
-        _engine.InvalidateGeometry();
+        _engine.EditSettings(preset.ApplyTo);
 
         if (restoreSourceAndOutput)
         {
@@ -538,8 +566,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        SourceTabs.SelectedIndex = WindowSourceTabIndex;
-        WindowList.SelectedIndex = _windows.IndexOf(window);
+        SelectSourceWithoutStarting(WindowSourceTabIndex, _windows.IndexOf(window));
         _engine.StartCapture(CaptureTarget.FromWindow(window));
     }
 
@@ -563,7 +590,7 @@ public partial class MainWindow : Window
 
         try
         {
-            preset.ApplyTo(Settings);
+            _engine.EditSettings(preset.ApplyTo);
             _engine.History.Clear();
             _startupPreset = preset;
 
@@ -609,7 +636,7 @@ public partial class MainWindow : Window
             _suppressSync = false;
         }
 
-        SourceTabs.SelectedIndex = MediaSourceTabIndex;
+        SelectSourceWithoutStarting(MediaSourceTabIndex);
         UpdatePlaybackUi();
     }
 
@@ -622,8 +649,7 @@ public partial class MainWindow : Window
 
         WindowInfo? window = SourceEnumerator.FindWindow(_windows, preset.Source.MatchTitle, preset.Source.MatchProcess);
         if (window is null) return;
-        SourceTabs.SelectedIndex = WindowSourceTabIndex;
-        WindowList.SelectedIndex = _windows.IndexOf(window);
+        SelectSourceWithoutStarting(WindowSourceTabIndex, _windows.IndexOf(window));
     }
 
     // ---- UI 동기화 --------------------------------------------------------
@@ -785,7 +811,9 @@ public partial class MainWindow : Window
             try
             {
                 PositionSlider.Maximum = duration > 0 ? duration : 1.0;
-                PositionSlider.Value = Math.Clamp(position, 0.0, PositionSlider.Maximum);
+                // 사용자가 썸을 끌고 있는 동안 덮어쓰면 썸이 재생 위치로 튀어 돌아간다.
+                if (!PositionSlider.IsMouseCaptureWithin)
+                    PositionSlider.Value = Math.Clamp(position, 0.0, PositionSlider.Maximum);
             }
             finally
             {
@@ -836,7 +864,7 @@ public partial class MainWindow : Window
             Loop = LoopCheck.IsChecked == true,
             Volume = VolumeSlider.Value,
         };
-        SourceTabs.SelectedIndex = MediaSourceTabIndex;
+        SelectSourceWithoutStarting(MediaSourceTabIndex);
         await StartCurrentMediaAsync();
     }
 
@@ -867,7 +895,7 @@ public partial class MainWindow : Window
             Path = primary,
             SlideIntervalSeconds = SlideIntervalSlider.Value,
         };
-        SourceTabs.SelectedIndex = MediaSourceTabIndex;
+        SelectSourceWithoutStarting(MediaSourceTabIndex);
         await StartCurrentMediaAsync();
     }
 
@@ -1215,8 +1243,7 @@ public partial class MainWindow : Window
 
         WindowInfo? window = SourceEnumerator.FindWindow(_windows, source.MatchTitle, source.MatchProcess);
         if (window is null) return null;
-        SourceTabs.SelectedIndex = WindowSourceTabIndex;
-        WindowList.SelectedIndex = _windows.IndexOf(window);
+        SelectSourceWithoutStarting(WindowSourceTabIndex, _windows.IndexOf(window));
         return CaptureTarget.FromWindow(window);
     }
 

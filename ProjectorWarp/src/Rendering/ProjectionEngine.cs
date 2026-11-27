@@ -3,6 +3,7 @@ using Vortice.Direct3D11;
 using Windows.Graphics;
 using Curvo.Capture;
 using Curvo.Geometry;
+using Curvo.Interop;
 using Curvo.Media;
 
 namespace Curvo.Rendering;
@@ -370,6 +371,35 @@ internal sealed class ProjectionEngine : IDisposable
 
     private void VideoRenderLoop()
     {
+        // Thread.Sleep(2) 는 기본 타이머 해상도(15.6ms)에서는 실제로 약 16ms 를 잔다.
+        // 그러면 새 프레임을 최대 한 화면 주기만큼 늦게 집어 60fps 영상이 끊긴다.
+        bool raisedTimerResolution = Win32.TimeBeginPeriod(1) == 0;
+        Exception? failure = null;
+        try
+        {
+            RunVideoRenderLoop(ref failure);
+        }
+        finally
+        {
+            if (raisedTimerResolution) Win32.TimeEndPeriod(1);
+        }
+
+        if (failure is null) return;
+
+        // 오류로 빠져나왔다면 루프가 끝났음을 반드시 표시해야 한다. 그렇지 않으면
+        // RequestRender 가 "동영상 루프가 그린다" 고 보고 영영 그리지 않는다.
+        if (ReferenceEquals(_videoThread, Thread.CurrentThread)) _videoLoopRunning = false;
+        Exception error = failure;
+        _dispatcher.BeginInvoke(() =>
+        {
+            Report($"Video render error: {error.Message}");
+            CheckDeviceLost();
+            RequestRender();
+        });
+    }
+
+    private void RunVideoRenderLoop(ref Exception? failure)
+    {
         while (_videoLoopRunning)
         {
             bool rendered = false;
@@ -401,11 +431,15 @@ internal sealed class ProjectionEngine : IDisposable
                 }
 
                 // vsync 대기는 렌더 락 밖에서 한다.
-                if (rendered) window!.Present(verticalSync: true);
+                if (rendered)
+                {
+                    window!.Present(verticalSync: true);
+                    CheckDeviceLost();
+                }
             }
             catch (Exception ex)
             {
-                _dispatcher.BeginInvoke(() => Report($"Video render error: {ex.Message}"));
+                failure = ex;
                 break;
             }
 
@@ -448,8 +482,44 @@ internal sealed class ProjectionEngine : IDisposable
     /// <summary>제어점이나 테셀레이션이 바뀌었을 때 메시를 다시 만들고 그린다.</summary>
     public void InvalidateGeometry()
     {
-        _renderer?.InvalidateMesh();
+        // 렌더 스레드는 락 안에서 메시를 다시 만든 뒤 더티 표시를 지운다.
+        // 락 밖에서 표시하면 그 사이에 들어온 표시가 지워져 마지막 드래그 위치가 반영되지 않는다.
+        GraphicsDevice? graphics = _graphics;
+        if (graphics is null)
+        {
+            _renderer?.InvalidateMesh();
+        }
+        else
+        {
+            lock (graphics.RenderLock)
+            {
+                _renderer?.InvalidateMesh();
+            }
+        }
         RequestRender();
+    }
+
+    /// <summary>
+    /// 격자 크기 · 테셀레이션 · 실행 취소 복원처럼 <b>구조가 바뀌는</b> 설정 변경을 렌더 락 안에서 적용한다.
+    /// 캡처/동영상 스레드는 같은 설정을 읽어 메시와 오버레이를 만들므로, 락 없이 바꾸면
+    /// 점 배열과 격자 크기가 어긋난 순간을 읽어 IndexOutOfRangeException 이 난다.
+    /// 적용 후 메시를 다시 만들고 그린다.
+    /// </summary>
+    public void EditSettings(Action<WarpSettings> edit)
+    {
+        GraphicsDevice? graphics = _graphics;
+        if (graphics is null)
+        {
+            edit(Settings);
+        }
+        else
+        {
+            lock (graphics.RenderLock)
+            {
+                edit(Settings);
+            }
+        }
+        InvalidateGeometry();
     }
 
     private void EnsureDevice()
@@ -539,10 +609,18 @@ internal sealed class ProjectionEngine : IDisposable
             _capture = null;
 
             if (_window is not null) OutputWindowClosing?.Invoke(_window);
-            _renderer?.Dispose();
-            _renderer = null;
-            _window?.Dispose();
-            _window = null;
+            GraphicsDevice? previousGraphics = _graphics;
+            if (previousGraphics is not null)
+            {
+                // 이미 들어와 있던 캡처 콜백이 그리는 중일 수 있으므로 락 안에서 해제한다.
+                lock (previousGraphics.RenderLock)
+                {
+                    _renderer?.Dispose();
+                    _renderer = null;
+                    _window?.Dispose();
+                    _window = null;
+                }
+            }
 
             _graphics?.Dispose();
             _graphics = null;

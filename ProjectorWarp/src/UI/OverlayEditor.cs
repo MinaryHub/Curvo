@@ -35,6 +35,8 @@ internal sealed class OverlayEditor
     private OutputWindow? _window;
     private DragKind _drag = DragKind.None;
     private int _dragIndex = -1;
+    /// <summary>이번 드래그로 실행 취소 기록을 남겼는지. 클릭만 하고 움직이지 않으면 남기지 않는다.</summary>
+    private bool _dragHistoryPushed;
 
     public OverlayEditor(ProjectionEngine engine) => _engine = engine;
 
@@ -53,6 +55,7 @@ internal sealed class OverlayEditor
         window.MouseMove += OnMouseMove;
         window.MouseUp += OnMouseUp;
         window.KeyDown += OnKeyDown;
+        window.MouseCaptureLost += EndDrag;
     }
 
     public void Detach()
@@ -62,7 +65,9 @@ internal sealed class OverlayEditor
         _window.MouseMove -= OnMouseMove;
         _window.MouseUp -= OnMouseUp;
         _window.KeyDown -= OnKeyDown;
+        _window.MouseCaptureLost -= EndDrag;
         _window = null;
+        EndDrag();
     }
 
     private WarpSettings Settings => _engine.Settings;
@@ -87,9 +92,7 @@ internal sealed class OverlayEditor
         int index = FindNearest(Settings.CornerPoints, point);
         if (index < 0) return false;
 
-        _engine.History.Push(Settings);
-        _drag = DragKind.Corner;
-        _dragIndex = index;
+        BeginDrag(DragKind.Corner, index);
         Overlay.ClearSelection();
         Overlay.SelectedCorner = index;
         _engine.RequestRender();
@@ -110,9 +113,7 @@ internal sealed class OverlayEditor
         int index = FindNearest(projected, point);
         if (index < 0) return false;
 
-        _engine.History.Push(Settings);
-        _drag = DragKind.ControlPoint;
-        _dragIndex = index;
+        BeginDrag(DragKind.ControlPoint, index);
         Overlay.ClearSelection();
         Overlay.SelectedControlPoint = index;
         _engine.RequestRender();
@@ -120,9 +121,31 @@ internal sealed class OverlayEditor
         return true;
     }
 
+    private void BeginDrag(DragKind kind, int index)
+    {
+        _drag = kind;
+        _dragIndex = index;
+        _dragHistoryPushed = false;
+    }
+
+    private void EndDrag()
+    {
+        _drag = DragKind.None;
+        _dragIndex = -1;
+        _dragHistoryPushed = false;
+    }
+
     private void OnMouseMove(Vector2 point)
     {
         if (_drag == DragKind.None || _window is null) return;
+
+        // 실제로 움직이기 직전에 한 번만 기록한다.
+        bool firstMove = !_dragHistoryPushed;
+        if (firstMove)
+        {
+            _engine.History.Push(Settings);
+            _dragHistoryPushed = true;
+        }
 
         switch (_drag)
         {
@@ -136,13 +159,13 @@ internal sealed class OverlayEditor
         }
 
         _engine.InvalidateGeometry();
+        if (firstMove) StateChanged?.Invoke(); // 실행 취소 버튼 활성화
     }
 
     private void OnMouseUp(Vector2 point, OutputMouseButton button)
     {
         if (button != OutputMouseButton.Left) return;
-        _drag = DragKind.None;
-        _dragIndex = -1;
+        EndDrag();
     }
 
     // ---- 키보드 ----------------------------------------------------------
@@ -203,17 +226,21 @@ internal sealed class OverlayEditor
     private void ResetGeometry()
     {
         _engine.History.Push(Settings);
-        Settings.ResetGeometry();
         Overlay.ClearSelection();
-        Notify();
+        _engine.EditSettings(settings => settings.ResetGeometry());
+        StateChanged?.Invoke();
     }
 
     private void ApplyHistory(bool undo)
     {
-        bool changed = undo ? _engine.History.Undo(Settings) : _engine.History.Redo(Settings);
-        if (!changed) return;
-        Overlay.ClearSelection();
-        Notify();
+        bool changed = false;
+        _engine.EditSettings(settings =>
+        {
+            changed = undo ? _engine.History.Undo(settings) : _engine.History.Redo(settings);
+            // 다시 그리기 전에 선택을 지워야 이전 격자의 선택 표시가 남지 않는다.
+            if (changed) Overlay.ClearSelection();
+        });
+        if (changed) StateChanged?.Invoke();
     }
 
     private void Nudge(int directionX, int directionY)

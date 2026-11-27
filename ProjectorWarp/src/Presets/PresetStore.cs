@@ -23,7 +23,26 @@ internal static class PresetStore
     {
         string? directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
-        File.WriteAllText(path, JsonSerializer.Serialize(preset, SerializerOptions));
+        WriteAllTextAtomic(path, JsonSerializer.Serialize(preset, SerializerOptions));
+    }
+
+    /// <summary>
+    /// 임시 파일에 다 쓰고 디스크에 내린 뒤 한 번에 바꿔 넣는다.
+    /// 쓰는 도중 전원이 꺼져도 이전 파일이 온전히 남는다(잘린 JSON 은 조용히 기본값으로 대체되어 보정값을 잃는다).
+    /// </summary>
+    internal static void WriteAllTextAtomic(string path, string contents)
+    {
+        string temporary = path + ".tmp";
+        using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+        using (var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
+        {
+            writer.Write(contents);
+            writer.Flush();
+            stream.Flush(flushToDisk: true);
+        }
+
+        if (File.Exists(path)) File.Replace(temporary, path, destinationBackupFileName: null);
+        else File.Move(temporary, path);
     }
 
     public static Preset? Load(string path)

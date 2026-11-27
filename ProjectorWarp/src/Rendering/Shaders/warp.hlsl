@@ -119,7 +119,10 @@ float4 PSMain(PSInput input) : SV_TARGET
         blend *= EdgeFactor(1.0 - uv.x, EdgeBlendWidth.y);
         blend *= EdgeFactor(uv.y, EdgeBlendWidth.z);
         blend *= EdgeFactor(1.0 - uv.y, EdgeBlendWidth.w);
-        color *= pow(saturate(blend), max(EdgeBlendParams.x, 1e-3));
+        // 램프는 빛의 양(선형)으로 더해져야 한다. 출력 값은 감마 인코딩되어 있으므로
+        // 1/감마 제곱을 해야 겹침부에서 두 프로젝터의 빛이 정확히 1 이 된다.
+        // (감마를 그대로 곱하면 2.2 에서 겹침 중앙 밝기가 약 7% 로 떨어진다.)
+        color *= pow(saturate(blend), 1.0 / max(EdgeBlendParams.x, 1e-3));
     }
 
     return float4(saturate(color), 1.0);
