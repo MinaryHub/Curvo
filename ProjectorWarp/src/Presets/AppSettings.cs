@@ -66,7 +66,7 @@ internal static class AppSettingsStore
         try
         {
             Directory.CreateDirectory(AppConfig.UserDataDirectory);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(settings, PresetStore.SerializerOptions));
+            PresetStore.WriteAllTextAtomic(FilePath, JsonSerializer.Serialize(settings, PresetStore.SerializerOptions));
             return true;
         }
         catch (Exception ex)

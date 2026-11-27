@@ -62,6 +62,7 @@ internal static class Win32
     public const uint WM_LBUTTONUP = 0x0202;
     public const uint WM_RBUTTONDOWN = 0x0204;
     public const uint WM_RBUTTONUP = 0x0205;
+    public const uint WM_CAPTURECHANGED = 0x0215;
     public const uint WM_MOUSEWHEEL = 0x020A;
     public const uint WM_DISPLAYCHANGE = 0x007E;
     public const uint WM_DPICHANGED = 0x02E0;
@@ -329,6 +330,13 @@ internal static class Win32
 
     public static bool IsCloaked(IntPtr hWnd)
         => DwmGetWindowAttribute(hWnd, DWMWA_CLOAKED, out int cloaked, sizeof(int)) == 0 && cloaked != 0;
+
+    /// <summary>타이머 해상도를 높인다(ms). 성공하면 0(TIMERR_NOERROR). 반드시 같은 값으로 TimeEndPeriod 를 부른다.</summary>
+    [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+    public static extern uint TimeBeginPeriod(uint periodMilliseconds);
+
+    [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
+    public static extern uint TimeEndPeriod(uint periodMilliseconds);
 
     public static bool IsShiftDown() => (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 

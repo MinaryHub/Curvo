@@ -19,6 +19,12 @@ internal sealed class SlideDeck : IDisposable
     private readonly Dictionary<int, ID3D11Texture2D> _textures = new();
     private readonly Dictionary<int, SizeInt32> _sizes = new();
     private readonly List<int> _loadOrder = new();
+    /// <summary>
+    /// 다음 장을 미리 디코딩하는 작업. 1920px 이미지 디코딩은 수십~수백 ms 가 걸려
+    /// 넘길 때 UI 스레드에서 하면 화면 전환이 그만큼 멈춘다. 텍스처 생성(빠름)만 넘길 때 한다.
+    /// 이 클래스의 다른 상태와 마찬가지로 UI 스레드에서만 접근한다.
+    /// </summary>
+    private readonly Dictionary<int, Task<(byte[] Pixels, int Width, int Height)>> _prefetch = new();
 
     private int _currentIndex = -1;
     private bool _disposed;
@@ -62,7 +68,21 @@ internal sealed class SlideDeck : IDisposable
         _currentIndex = index;
         CurrentTexture = texture;
         CurrentSize = _sizes[index];
+        PrefetchNext();
         return true;
+    }
+
+    /// <summary>앞으로 넘길 장을 백그라운드에서 디코딩해 둔다.</summary>
+    private void PrefetchNext()
+    {
+        if (_slides.Count < 2) return;
+        int next = (_currentIndex + 1) % _slides.Count;
+        if (_textures.ContainsKey(next) || _prefetch.ContainsKey(next)) return;
+
+        // 오래된 예약은 버린다(한 장만 앞서 읽는다).
+        _prefetch.Clear();
+        string path = _slides[next];
+        _prefetch[next] = DecodeImageAsync(path);
     }
 
     /// <summary>다음 장. wrap 이 true 면 마지막에서 처음으로 돌아간다.</summary>
@@ -98,7 +118,7 @@ internal sealed class SlideDeck : IDisposable
             return cached;
         }
 
-        (byte[] pixels, int width, int height) = DecodeImage(_slides[index]);
+        (byte[] pixels, int width, int height) = TakePrefetched(index) ?? DecodeImage(_slides[index]);
         if (width <= 0 || height <= 0) return null;
 
         ID3D11Texture2D texture = CreateTexture(pixels, width, height);
@@ -107,6 +127,21 @@ internal sealed class SlideDeck : IDisposable
         Touch(index);
         TrimCache();
         return texture;
+    }
+
+    /// <summary>미리 디코딩한 결과가 있으면 꺼낸다. 실패했으면 null 을 돌려 동기 디코딩으로 다시 시도한다.</summary>
+    private (byte[] Pixels, int Width, int Height)? TakePrefetched(int index)
+    {
+        if (!_prefetch.Remove(index, out Task<(byte[] Pixels, int Width, int Height)>? task)) return null;
+        try
+        {
+            // 보통 이미 끝나 있다. 아직이면 남은 시간만 기다린다.
+            return task.GetAwaiter().GetResult();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     private void Touch(int index)
@@ -167,6 +202,10 @@ internal sealed class SlideDeck : IDisposable
     /// 정지 이미지 1회 업로드이므로 CPU 경유가 허용된다(동영상/캡처 경로는 GPU 상주 유지).
     /// </summary>
     private static (byte[] Pixels, int Width, int Height) DecodeImage(string path)
+        => DecodeImageAsync(path).GetAwaiter().GetResult();
+
+    /// <summary>스레드 풀에서 디코딩한다(UI 스레드의 동기화 컨텍스트로 돌아오지 않는다).</summary>
+    private static Task<(byte[] Pixels, int Width, int Height)> DecodeImageAsync(string path)
         => Task.Run(async () =>
         {
             StorageFile file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path));
@@ -181,7 +220,7 @@ internal sealed class SlideDeck : IDisposable
                 ColorManagementMode.DoNotColorManage);
 
             return (provider.DetachPixelData(), (int)decoder.OrientedPixelWidth, (int)decoder.OrientedPixelHeight);
-        }).GetAwaiter().GetResult();
+        });
 
     public void Clear()
     {
@@ -194,6 +233,7 @@ internal sealed class SlideDeck : IDisposable
         _textures.Clear();
         _sizes.Clear();
         _loadOrder.Clear();
+        _prefetch.Clear(); // 진행 중인 디코딩은 결과만 버려진다.
         _slides.Clear();
     }
 

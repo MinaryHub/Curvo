@@ -60,7 +60,7 @@ internal static class AppConfig
     public const int FramePoolBufferCount = 2;
 
     /// <summary>
-    /// 동영상 렌더 루프가 새 프레임을 확인하는 간격(ms).
+    /// 동영상 재생 중 렌더 스레드가 새 프레임을 확인하는 간격(ms).
     /// 24~30fps 소스의 프레임 도착을 놓치지 않을 만큼 짧게 둔다.
     /// </summary>
     public const int VideoFramePollIntervalMilliseconds = 2;
