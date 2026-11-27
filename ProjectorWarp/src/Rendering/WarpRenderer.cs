@@ -160,7 +160,7 @@ internal sealed class WarpRenderer : IDisposable
     /// 한 프레임을 그린다. 호출자는 GraphicsDevice.RenderLock 을 잡고 있어야 한다.
     /// <para>
     /// Present 는 하지 않는다. vsync Present 는 최대 한 프레임(약 16ms) 동안 블록되므로
-    /// 렌더 락을 쥔 채로 하면 캡처 스레드와 UI 스레드가 그만큼 함께 멈춘다.
+    /// 렌더 락을 쥔 채로 하면 캡처 콜백과 UI 의 설정 변경이 그만큼 함께 멈춘다.
     /// 호출자가 락을 놓은 뒤 <see cref="OutputWindow.Present"/> 를 부른다.
     /// </para>
     /// </summary>

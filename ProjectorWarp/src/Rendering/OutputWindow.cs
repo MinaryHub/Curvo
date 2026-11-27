@@ -25,7 +25,7 @@ internal sealed class OutputWindow : IDisposable
 
     private readonly GraphicsDevice _graphics;
     /// <summary>
-    /// Present 는 렌더 락 밖(캡처·동영상 스레드)에서 불린다. 같은 순간 UI 스레드가 스왑체인을
+    /// Present 는 렌더 락 밖(렌더 스레드)에서 불린다. 같은 순간 UI 스레드가 스왑체인을
     /// 해제하거나 크기를 바꾸면 해제된 스왑체인에 Present 하게 되므로 이 락으로 서로 막는다.
     /// 락 순서는 항상 RenderLock → _presentLock 이다(Present 는 RenderLock 을 잡지 않는다).
     /// </summary>
